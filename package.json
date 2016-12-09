@@ -1,0 +1,27 @@
+{
+  "name": "webppl-nn",
+  "version": "0.0.1",
+  "description": "Neural network helpers for WebPPL",
+  "main": "index.js",
+  "webppl": {
+    "wppl": [
+       "src/nn.wppl"
+     ]
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/null-a/webppl-nn.git"
+  },
+  "keywords": [
+    "webppl"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/null-a/webppl-nn/issues"
+  },
+  "homepage": "https://github.com/null-a/webppl-nn#readme"
+}
