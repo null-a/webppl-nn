@@ -168,3 +168,5 @@ var linear = function(nout, name, maybeParamModel) {
     return T.add(T.dot(w, x), b);
   };
 };
+
+// TODO: Write about the problems that arise in taking this approach.
