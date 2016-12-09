@@ -15,6 +15,23 @@ var mem1 = function(f) {
   };
 };
 
+// This is a first attempt at providing a method for running bits of
+// optimized programs. I think we can do more/better though.
+
+// Calling the regular function `fn` evaluates the function, sampling
+// from the target. Calling the result of getGuide(params, fn)
+// evaluates the function sampling from the guide using the parameters
+// given by "params".
+
+var withParams = function(params, fn) {
+  return function() {
+    var args = arguments;
+    sample(Infer({params, method: 'forward', samples: 1, guide: true, model() {
+      return ad.valueRec(apply(fn, args));
+    }}));
+  };
+};
+
 // ==================================================
 // Model Parameters
 // ==================================================
@@ -95,6 +112,34 @@ var modelParamL2 = function(sigma) {
 // Neural Networks
 // ==================================================
 
+var dims = function(x) {
+  return ad.value(x).dims;
+};
+
+var concat = function(arr) {
+  var t = T.concat(arr);
+  return T.reshape(t, [dims(t)[0], 1]);
+};
+
+var sigmoid = function(x) {
+  return T.sigmoid(x);
+};
+
+var tanh = function(x) {
+  return T.tanh(x);
+};
+
+// Compose several functions in left to right order.
+// stack([f, g, h]) == compose(compose(h, g), f)
+var stack = function(arr) {
+  var iter = function(i) {
+    return (arr.length === i) ?
+        idF :
+        compose(iter(i + 1), arr[i]);
+  };
+  return iter(0);
+};
+
 // When a network is used in the model we often want to include a
 // prior over the network's parameters. (So that we're specifying
 // fully probabilistic model that could in principle be used with any
@@ -110,3 +155,16 @@ var modelParamL2 = function(sigma) {
 // function is `param` then we end up with a net suitable for use in
 // the guide. Alternatively a parameter model function can be passed
 // to create a net suitable for use in the model.
+
+var linear = function(nout, name, maybeParamModel) {
+  var nnparam = maybeParamModel || param;
+  assert.ok(Number.isInteger(nout), 'nout should be an integer.');
+  assert.ok(name, 'A network must be given a name');
+  return function(x) {
+    var nin = dims(x)[0];
+    var sigma = Math.sqrt(2 / (nin + nout));
+    var w = nnparam({name: name + 'w', dims: [nout, nin], sigma});
+    var b = nnparam({name: name + 'b', dims: [nout, 1], sigma: 0});
+    return T.add(T.dot(w, x), b);
+  };
+};

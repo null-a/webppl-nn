@@ -1,0 +1,39 @@
+var classifierNet = stack([
+  function(x) { Vector([x]); },       // Map input from scalar to vector.
+  linear(1, 'net1', modelParamL2(1)), // L2 prior on parameters.
+  sigmoid,                            // Squish to [0,1], representing class probability of input.
+  function(x) { T.get(x, 0); }        // Extract scalar output from vector.
+]);
+
+var data = [
+  {x: -2, label: false},
+  {x: -3, label: false},
+  {x: -2, label: false},
+  {x: 1, label: true},
+  {x: 2, label: true},
+  {x: 1.5, label: true},
+  {x: 2.5, label: true}];
+
+var model = function() {
+  mapData({data}, function(datum) {
+    var p = classifierNet(datum.x);
+    observe(Bernoulli({p}), datum.label);
+  });
+};
+
+var params = Optimize({
+  model,
+  steps: 1000,
+  optMethod: {adam: {stepSize: .1}}});
+
+// Here we create a function that runs the net using the optimized
+// parameters.
+var optimizedClassifier = withParams(params, classifierNet);
+
+// Inspect the optimized function by passing some values through it.
+map(function(x) {
+  return {x, prob: optimizedClassifier(x)};
+}, _.range(-3, 4));
+
+// Suggestion: Try changing the strength of the prior on the network
+// parameters.
