@@ -1,1 +1,112 @@
-// TODO: Implement package.
+// Like mem, but cache key is only based on the first argument of the
+// memoized function.
+var mem1 = function(f) {
+  globalStore.mem1Index = 1 + (globalStore.mem1Index || 0);
+  var key = 'mem1-' + globalStore.mem1Index;
+  return function(arg) {
+    var stringedArg = key + util.serialize(arg);
+    if (_.has(globalStore, stringedArg)) {
+      return globalStore[stringedArg];
+    } else {
+      var val = apply(f, arguments);
+      globalStore[stringedArg] = val;
+      return val;
+    }
+  };
+};
+
+// ==================================================
+// Model Parameters
+// ==================================================
+
+// By model parameter I mean a guide parameter that is included in a
+// model by adding a prior distribution that is guided by a delta
+// distribution, parameterized by the guide parameter. When optimizing
+// the ELBO we can view optimization as performing maximum likelihood
+// with regularization on the model parameters.
+
+// WebPPL already has `modelParam` which does this for the case where
+// the prior is an improper uniform over the reals. (This improper
+// prior corresponded to performing no regularizing.)
+
+// OBSERVATION: If we want model parameters to behave similarly to
+// `param`, then fetching a parameter with a given name multiple times
+// during the evaluation a model, should always return the same value.
+// When optimizing the ELBO, this is automatically the case, since the
+// guide is just a Delta on the parameter, and `param` will return the
+// same value for a given name. However, if we were to follow the
+// current implementation of `modelParam`, this wouldn't be the case
+// for other algorithms. Imagine using HMC to do inference for a
+// Bayesian neural network, and further that this network is used in
+// more than one place in the model, where the sharing comes from the
+// re-use of parameter names. Because we're no longer sampling from
+// the guide, there is now nothing to induce sharing by name -- each
+// call to `modelParam` will sample fresh parameters for the network
+// from the prior. This consideration suggests the we ought to cache
+// calls to `modelParam`. (Using the parameter name as the cache key.)
+// This also makes sense from another perspective -- without such
+// caching, every additional call to `modelParam` will add its own
+// regularization term to the objective when optimizing the ELBO.
+
+// This helper implements the pattern just described:
+
+var __parameterModel = mem1(function(name, paramOpts, getPrior) {
+  // getPrior is a function that returns a distribution instance. It
+  // is passed the options that are passed to `param` to make it
+  // possible to have the dimension of the prior match that of the
+  // guide parameter.
+  return sample(getPrior(paramOpts), {guide() {
+    return Delta({v: param(paramOpts)});
+  }});
+});
+
+var parameterModel = function(getPrior) {
+  return function(paramOpts) {
+    // TODO: Handle address based names.
+    assert.ok(paramOpts.name, 'A name must be given.');
+    return __parameterModel(paramOpts.name, paramOpts, getPrior);
+  };
+};
+
+// Note that since it's not possible to sample from an improper prior,
+// that fact that the result of sampling isn't cached (as discused
+// above) is not a problem.
+// var modelParam = paramModel(constF(ImproperUniform()));
+
+// The function returned by e.g. modelParamL2(0.1) is analogous the
+// WebPPL's `modelParam`.
+var modelParamL2 = function(sigma) {
+  return parameterModel(function(paramOpts) {
+    var dims = paramOpts.dims;
+    return dims ?
+        TensorGaussian({mu: 0, sigma, dims}) :
+        Gaussian({mu: 0, sigma});
+  });
+};
+
+// TODO: One problem here is that one would expect `modelParam` to
+// throw an error in the guide because it calls `sample`. However, if
+// the value of the parameter has been cached, it's possible to call
+// `modelParam` and successfully fetch the value. This is confusing.
+// Perhaps `modelParam` should check whether its called from the
+// guide, and error out if so.
+
+// ==================================================
+// Neural Networks
+// ==================================================
+
+// When a network is used in the model we often want to include a
+// prior over the network's parameters. (So that we're specifying
+// fully probabilistic model that could in principle be used with any
+// inference algorithm.)
+
+// In order that neural network helpers can be reused in both the
+// model and the guide, we need to abstract out the specification of
+// the prior and its guide distribution.
+
+// This is done using the model parameter scheme described above.
+// Specifically, the neural network constructors take as an argument
+// the function that is used to create/fetch parameters. If this
+// function is `param` then we end up with a net suitable for use in
+// the guide. Alternatively a parameter model function can be passed
+// to create a net suitable for use in the model.
