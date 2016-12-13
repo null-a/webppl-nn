@@ -156,6 +156,28 @@ var stack = function(arr) {
 // the guide. Alternatively a parameter model function can be passed
 // to create a net suitable for use in the model.
 
+// TODO: Write about the problems that arise in taking this approach.
+
+// The biggest problem I see with this approach is inherited from
+// `param`. I'll describe the problem with that, the problem with nets
+// is similar. A parameter is created/fetched with something like
+// `param({name, dims, init})`. Note, we can induce parameter sharing
+// by reusing a name more than once. The problem is that when sharing
+// is across two or more distinct locations in source code, then there
+// is no longer a single canonical location in which dims (and other
+// properties) are specified. (The dims from the `param` call
+// encountered first will be used.) At best this is an annoyance
+// (because the easiest way to cope is to use the same dims at every
+// occurrence of a name), but I suspect that in practice it will be
+// worse than annoying. A bug arising as a result of a tensor getting
+// unexpected dims by virtue of a definition somewhere else in the
+// program will, I suspect, cause much confusion. (Especially if the
+// sharing by name is accidental, or worse, caused by loading a
+// package!) I think this problem stems from the fact that `param`
+// smushes together both creation and retrieval of parameters.
+// Splitting apart these two operations would offer a number of ways
+// of addressing this I think.
+
 var linear = function(nout, name, maybeParamModel) {
   var nnparam = maybeParamModel || param;
   assert.ok(Number.isInteger(nout), 'nout should be an integer.');
@@ -168,5 +190,3 @@ var linear = function(nout, name, maybeParamModel) {
     return T.add(T.dot(w, x), b);
   };
 };
-
-// TODO: Write about the problems that arise in taking this approach.
