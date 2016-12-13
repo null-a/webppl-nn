@@ -252,3 +252,33 @@ var linearWeightNorm = function(nout, name, maybeParamModel) {
     return T.add(T.mul(T.div(g, norm), T.dot(v, x)), b);
   };
 };
+
+// Gated Recurrent Unit
+
+// This is similar to the variant described in "Empirical Evaluation
+// of Gated Recurrent Neural Networks on Sequence Modeling", which
+// computes the candidate activation in a slightly different way from
+// the original paper.
+
+// https://arxiv.org/abs/1412.3555
+
+var gru = function(dim, name, maybeLinearLayer, maybeParamModel) {
+  assert.ok(Number.isInteger(dim), 'dim should be an integer');
+  assert.ok(name, 'A network must be given a name');
+  var nnparam = maybeParamModel || param;
+  var lin = maybeLinearLayer || linear;
+  var update = compose(sigmoid, lin(dim, name + 'update', nnparam));
+  var reset = compose(sigmoid, lin(dim, name + 'reset', nnparam));
+  var candidate = compose(tanh, lin(dim, name + 'candidate', nnparam));
+  return function(hprev, x) {
+    assert.ok(dims(hprev)[0] === dim,
+              'Previous hidden vector has unexpected dimension');
+    var hprevx = concat([hprev, x]);
+    var r = reset(hprevx);
+    var z = update(hprevx);
+    var cand = candidate(concat([T.mul(hprev, r), x]));
+    var oneminusz = T.add(T.neg(z), 1);
+    return T.add(T.mul(oneminusz, hprev), T.mul(z, cand));
+  };
+};
+
