@@ -282,3 +282,45 @@ var gru = function(dim, name, maybeLinearLayer, maybeParamModel) {
   };
 };
 
+// Long Short Term Memory
+
+// This is similar to the variant described in "Generating sequences
+// with recurrent neural networks" (Graves 2013). The difference is
+// that here there are no 'peep-hole' connections. i.e. The previous
+// memory state is not (currently) passed as input to the forget,
+// input, output gates.
+
+// https://arxiv.org/abs/1308.0850
+
+var lstm = function(dim, name, maybeLinearLayer, maybeParamModel) {
+  // dim is the dimension of the memory and hidden state vectors.
+  assert.ok(Number.isInteger(dim), 'dim should be an integer');
+  assert.ok(name, 'A network must be given a name');
+  var nnparam = maybeParamModel || param;
+  var lin = maybeLinearLayer || linear;
+  var forget = compose(sigmoid, lin(dim, name + 'forget', nnparam));
+  var input = compose(sigmoid, lin(dim, name + 'input', nnparam));
+  var output = compose(sigmoid, lin(dim, name + 'output', nnparam));
+  var candidate = compose(tanh, lin(dim, name + 'candidate', nnparam));
+  return function(prev, x) {
+    // For compatibility with the interface of e.g. gru we combine the
+    // memory and hidden state into a single vector, prev.
+    assert.ok(dims(prev)[0] === (2 * dim),
+              'Previous state vector has unexpected dimension');
+    var cprev = T.reshape(T.range(prev, 0, dim), [dim, 1]);
+    var hprev = T.reshape(T.range(prev, dim, 2 * dim), [dim, 1]);
+    var hprevx = concat([hprev, x]);
+    // TODO: It's said that initializing the biases of the forget gate
+    // to one is a good idea. This is so that the output is close to
+    // one at the start of optimization, ensuring information is
+    // passed along. This is mentioned in e.g. "An Empirical
+    // Exploration of Recurrent Network Architectures".
+    var f = forget(hprevx);
+    var i = input(hprevx);
+    var o = output(hprevx);
+    var cand = candidate(hprevx);
+    var c = T.add(T.mul(f, cprev), T.mul(i, cand));
+    var h = T.mul(o, tanh(c));
+    return concat([c, h]);
+  };
+};
