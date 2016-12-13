@@ -178,9 +178,6 @@ var stack = function(arr) {
 // Splitting apart these two operations would offer a number of ways
 // of addressing this I think.
 
-// TODO: If this didn't include the bias term, it would be reusable by
-// layer norm/weight norm I think.
-
 var linear = function(nout, name, maybeParamModel) {
   var nnparam = maybeParamModel || param;
   assert.ok(Number.isInteger(nout), 'nout should be an integer.');
@@ -188,36 +185,49 @@ var linear = function(nout, name, maybeParamModel) {
   return function(x) {
     var nin = dims(x)[0];
     var sigma = Math.sqrt(2 / (nin + nout));
-    var w = nnparam({name: name + 'w', dims: [nout, nin], sigma});
-    var b = nnparam({name: name + 'b', dims: [nout, 1], sigma: 0});
-    return T.add(T.dot(w, x), b);
+    var w = nnparam({name, dims: [nout, nin], sigma});
+    return T.dot(w, x);
   };
 };
 
-// Linear layer with layer normalization.
+var bias = function(name, maybeParamModel) {
+  assert.ok(name, 'A network must be given a name');
+  var nnparam = maybeParamModel || param;
+  return function(x) {
+    var nout = dims(x)[0];
+    var b = nnparam({name, dims: [nout, 1], sigma: 0});
+    return T.add(x, b);
+  };
+};
+
+var affine = function(nout, name, maybeParamModel) {
+  return compose(
+    bias(name + 'b', maybeParamModel),
+    linear(nout, name + 'w', maybeParamModel));
+};
+
+// Center and rescale the input. Typical usage is to put this after a
+// linear layer and follow it with a bias and non-linearity, yielding
+// "Layer normalization".
+
 // https://arxiv.org/abs/1607.06450
 
-var linearLayerNorm = function(nout, name, maybeParamModel) {
+var layerNorm = function(name, maybeParamModel) {
   var nnparam = maybeParamModel || param;
-  assert.ok(Number.isInteger(nout), 'nout should be an integer');
   assert.ok(name, 'A network must be given a name');
-  // If nout is 1, then the std. dev. of activations will be zero,
-  // causing div. by zero when we normalize.
-  assert.ok(nout > 1, 'Layer norm requires ouput dim to be > 1');
-  return function(x) {
-    var nin = dims(x)[0];
-    var sigma = Math.sqrt(2 / (nin + nout));
-    var g = nnparam({name: name + 'g', dims: [nout, 1], mu: 1, sigma: 0}); // gain
-    var w = nnparam({name: name + 'w', dims: [nout, nin], sigma});
-    var b = nnparam({name: name + 'b', dims: [nout, 1], sigma: 0});
-    var a = T.dot(w, x);
+  return function(a) {
+    var nout = dims(a)[0];
+    // Gain parameters.
+    var g = nnparam({name: name + 'g', dims: [nout, 1], mu: 1, sigma: 0});
     var mu = T.sumreduce(a) / nout;
     var acentered = T.sub(a, mu);
     var sd = Math.sqrt(T.sumreduce(T.pow(acentered, 2)) / nout);
     assert.ok(ad.value(sd) > 0, 'Standard deviation of activations is not positive');
-    return T.add(T.mul(T.div(g, sd), acentered), b);
+    return T.mul(T.div(g, sd), acentered);
   };
 };
+
+// TODO: Implement in a similar way to layer norm.
 
 // Linear layer with weight normalization.
 // https://arxiv.org/abs/1602.07868
@@ -262,11 +272,15 @@ var linearWeightNorm = function(nout, name, maybeParamModel) {
 
 // https://arxiv.org/abs/1412.3555
 
+// TODO: It's annoying that net constructors don't compose, because
+// I'd like it to be easy to say that layer norm should be used within
+// the gru.
+
 var gru = function(dim, name, maybeLinearLayer, maybeParamModel) {
   assert.ok(Number.isInteger(dim), 'dim should be an integer');
   assert.ok(name, 'A network must be given a name');
   var nnparam = maybeParamModel || param;
-  var lin = maybeLinearLayer || linear;
+  var lin = maybeLinearLayer || affine;
   var update = compose(sigmoid, lin(dim, name + 'update', nnparam));
   var reset = compose(sigmoid, lin(dim, name + 'reset', nnparam));
   var candidate = compose(tanh, lin(dim, name + 'candidate', nnparam));
@@ -297,7 +311,7 @@ var lstm = function(dim, name, maybeLinearLayer, maybeParamModel) {
   assert.ok(Number.isInteger(dim), 'dim should be an integer');
   assert.ok(name, 'A network must be given a name');
   var nnparam = maybeParamModel || param;
-  var lin = maybeLinearLayer || linear;
+  var lin = maybeLinearLayer || affine;
   var forget = compose(sigmoid, lin(dim, name + 'forget', nnparam));
   var input = compose(sigmoid, lin(dim, name + 'input', nnparam));
   var output = compose(sigmoid, lin(dim, name + 'output', nnparam));
