@@ -19,7 +19,7 @@ var mem1 = function(f) {
 // optimized programs. I think we can do more/better though.
 
 // Calling the regular function `fn` evaluates the function, sampling
-// from the target. Calling the result of getGuide(params, fn)
+// from the target. Calling the result of withParams(params, fn)
 // evaluates the function sampling from the guide using the parameters
 // given by "params".
 
