@@ -2,7 +2,7 @@
   "name": "webppl-nn",
   "version": "0.0.1",
   "description": "Neural network helpers for WebPPL",
-  "main": "index.js",
+  "main": "src/nn.js",
   "webppl": {
     "wppl": [
        "src/nn.wppl"

@@ -178,6 +178,9 @@ var stack = function(arr) {
 // Splitting apart these two operations would offer a number of ways
 // of addressing this I think.
 
+// TODO: If this didn't include the bias term, it would be reusable by
+// layer norm/weight norm I think.
+
 var linear = function(nout, name, maybeParamModel) {
   var nnparam = maybeParamModel || param;
   assert.ok(Number.isInteger(nout), 'nout should be an integer.');
@@ -188,5 +191,64 @@ var linear = function(nout, name, maybeParamModel) {
     var w = nnparam({name: name + 'w', dims: [nout, nin], sigma});
     var b = nnparam({name: name + 'b', dims: [nout, 1], sigma: 0});
     return T.add(T.dot(w, x), b);
+  };
+};
+
+// Linear layer with layer normalization.
+// https://arxiv.org/abs/1607.06450
+
+var linearLayerNorm = function(nout, name, maybeParamModel) {
+  var nnparam = maybeParamModel || param;
+  assert.ok(Number.isInteger(nout), 'nout should be an integer');
+  assert.ok(name, 'A network must be given a name');
+  // If nout is 1, then the std. dev. of activations will be zero,
+  // causing div. by zero when we normalize.
+  assert.ok(nout > 1, 'Layer norm requires ouput dim to be > 1');
+  return function(x) {
+    var nin = dims(x)[0];
+    var sigma = Math.sqrt(2 / (nin + nout));
+    var g = nnparam({name: name + 'g', dims: [nout, 1], mu: 1, sigma: 0}); // gain
+    var w = nnparam({name: name + 'w', dims: [nout, nin], sigma});
+    var b = nnparam({name: name + 'b', dims: [nout, 1], sigma: 0});
+    var a = T.dot(w, x);
+    var mu = T.sumreduce(a) / nout;
+    var acentered = T.sub(a, mu);
+    var sd = Math.sqrt(T.sumreduce(T.pow(acentered, 2)) / nout);
+    assert.ok(ad.value(sd) > 0, 'Standard deviation of activations is not positive');
+    return T.add(T.mul(T.div(g, sd), acentered), b);
+  };
+};
+
+// Linear layer with weight normalization.
+// https://arxiv.org/abs/1602.07868
+
+// It's not clear how we could do the data dependent init., so we
+// resort to Xavier initialization. Is this sensible? The problem is
+// this might be used as part of a recurrent net (which is problematic
+// for the reason mentioned in the paper) and because we don't have a
+// straight-forward way of looking at a 'batch' from here.
+
+// Does it make sense to apply regularization v here, given that we
+// already normalize the length of the row vectors of v? In practice,
+// regularization seems to have a much stronger effect on this
+// parameterization. (You can see this with L2 prior by comparing this
+// with the linear layer on the ml-classifier example.) Removing the
+// prior from v seems to make a difference here.
+
+// Note: When I tried parameterizing g in log space the ml-classifier
+// example often failed to work well. I don't know why.
+
+var linearWeightNorm = function(nout, name, maybeParamModel) {
+  var nnparam = maybeParamModel || param;
+  assert.ok(Number.isInteger(nout), 'nout should be an integer');
+  assert.ok(name, 'A network must be given a name');
+  return function(x) {
+    var nin = dims(x)[0];
+    var sigma = Math.sqrt(2 / (nin + nout));
+    var g = nnparam({name: name + 'g', dims: [nout, 1], mu: 1, sigma: 0}); // gain
+    var v = nnparam({name: name + 'v', dims: [nout, nin], sigma});
+    var b = nnparam({name: name + 'b', dims: [nout, 1], sigma: 0});
+    var norm = T.sqrt(webpplNn.sumreduce0(T.pow(v, 2)));
+    return T.add(T.mul(T.div(g, norm), T.dot(v, x)), b);
   };
 };
