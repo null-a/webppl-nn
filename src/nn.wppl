@@ -290,14 +290,14 @@ var linearWeightNorm = function(nout, name, maybeParamModel) {
 
 // https://arxiv.org/abs/1412.3555
 
-var gru = function(dim, name, maybeLinearLayer, maybeParamModel) {
+var gru = function(dim, name, maybeParamModel, maybeMakeNet) {
   assert.ok(Number.isInteger(dim), 'dim should be an integer');
   assert.ok(name, 'A network must be given a name');
   var nnparam = maybeParamModel || param;
-  var lin = maybeLinearLayer || affine;
-  var update = compose(sigmoid, lin(dim, name + 'update', nnparam));
-  var reset = compose(sigmoid, lin(dim, name + 'reset', nnparam));
-  var candidate = compose(tanh, lin(dim, name + 'candidate', nnparam));
+  var makeNet = maybeMakeNet || affine;
+  var update = compose(sigmoid, makeNet(dim, name + 'update', nnparam));
+  var reset = compose(sigmoid, makeNet(dim, name + 'reset', nnparam));
+  var candidate = compose(tanh, makeNet(dim, name + 'candidate', nnparam));
   return function(hprev, x) {
     assert.ok(dims(hprev)[0] === dim,
               'Previous hidden vector has unexpected dimension');
@@ -320,16 +320,16 @@ var gru = function(dim, name, maybeLinearLayer, maybeParamModel) {
 
 // https://arxiv.org/abs/1308.0850
 
-var lstm = function(dim, name, maybeLinearLayer, maybeParamModel) {
+var lstm = function(dim, name, maybeParamModel, maybeMakeNet) {
   // dim is the dimension of the memory and hidden state vectors.
   assert.ok(Number.isInteger(dim), 'dim should be an integer');
   assert.ok(name, 'A network must be given a name');
   var nnparam = maybeParamModel || param;
-  var lin = maybeLinearLayer || affine;
-  var forget = compose(sigmoid, lin(dim, name + 'forget', nnparam));
-  var input = compose(sigmoid, lin(dim, name + 'input', nnparam));
-  var output = compose(sigmoid, lin(dim, name + 'output', nnparam));
-  var candidate = compose(tanh, lin(dim, name + 'candidate', nnparam));
+  var makeNet = maybeMakeNet || affine;
+  var forget = compose(sigmoid, makeNet(dim, name + 'forget', nnparam));
+  var input = compose(sigmoid, makeNet(dim, name + 'input', nnparam));
+  var output = compose(sigmoid, makeNet(dim, name + 'output', nnparam));
+  var candidate = compose(tanh, makeNet(dim, name + 'candidate', nnparam));
   return function(prev, x) {
     // For compatibility with the interface of e.g. gru we combine the
     // memory and hidden state into a single vector, prev.
