@@ -321,22 +321,26 @@ var gru = function(dim, name, maybeParamModel, maybeMakeNet) {
 // https://arxiv.org/abs/1308.0850
 
 var lstm = function(dim, name, maybeParamModel, maybeMakeNet) {
-  // dim is the dimension of the memory and hidden state vectors.
+  // dim is the total dimension of the state. i.e. memory + hidden
+  // state vectors. Setting things up this way makes it easy to swap
+  // between gru and lstm.
   assert.ok(Number.isInteger(dim), 'dim should be an integer');
+  assert.ok(dim % 2 === 0, 'dim should be an even integer');
   assert.ok(name, 'A network must be given a name');
+  var hdim = dim / 2;
   var nnparam = maybeParamModel || param;
   var makeNet = maybeMakeNet || affine;
-  var forget = compose(sigmoid, makeNet(dim, name + 'forget', nnparam));
-  var input = compose(sigmoid, makeNet(dim, name + 'input', nnparam));
-  var output = compose(sigmoid, makeNet(dim, name + 'output', nnparam));
-  var candidate = compose(tanh, makeNet(dim, name + 'candidate', nnparam));
+  var forget = compose(sigmoid, makeNet(hdim, name + 'forget', nnparam));
+  var input = compose(sigmoid, makeNet(hdim, name + 'input', nnparam));
+  var output = compose(sigmoid, makeNet(hdim, name + 'output', nnparam));
+  var candidate = compose(tanh, makeNet(hdim, name + 'candidate', nnparam));
   return function(prev, x) {
     // For compatibility with the interface of e.g. gru we combine the
     // memory and hidden state into a single vector, prev.
-    assert.ok(dims(prev)[0] === (2 * dim),
+    assert.ok(dims(prev)[0] === dim,
               'Previous state vector has unexpected dimension');
-    var cprev = T.reshape(T.range(prev, 0, dim), [dim, 1]);
-    var hprev = T.reshape(T.range(prev, dim, 2 * dim), [dim, 1]);
+    var cprev = T.reshape(T.range(prev, 0, hdim), [hdim, 1]);
+    var hprev = T.reshape(T.range(prev, hdim, dim), [hdim, 1]);
     var hprevx = concat([hprev, x]);
     // TODO: It's said that initializing the biases of the forget gate
     // to one is a good idea. This is so that the output is close to
