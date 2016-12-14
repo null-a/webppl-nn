@@ -227,6 +227,24 @@ var layerNorm = function(name, maybeParamModel) {
   };
 };
 
+// TODO: You can imagine having a convenient way to do a restricted
+// kind of composition of network constructors, where we assume the
+// sub nets are stacked, and each take the same nout param. (Also
+// requires more consistency in the interface of current constructors,
+// e.g. we'd need to do something i like have a version of bias that
+// takes a dummy nout param.) This could be useful for passing novel
+// constructors to gru/lstm etc.
+
+var affineWithLayerNorm = function(nout, name, maybeModelParam) {
+  var nnparam = maybeModelParam || param;
+  assert.ok(name, 'A network must be given a name');
+  return stack([
+    linear(nout, name + 'w', nnparam),
+    layerNorm(name + 'ln', nnparam),
+    bias(name + 'b', nnparam)
+  ]);
+};
+
 // TODO: Implement in a similar way to layer norm.
 
 // Linear layer with weight normalization.
@@ -271,10 +289,6 @@ var linearWeightNorm = function(nout, name, maybeParamModel) {
 // the original paper.
 
 // https://arxiv.org/abs/1412.3555
-
-// TODO: It's annoying that net constructors don't compose, because
-// I'd like it to be easy to say that layer norm should be used within
-// the gru.
 
 var gru = function(dim, name, maybeLinearLayer, maybeParamModel) {
   assert.ok(Number.isInteger(dim), 'dim should be an integer');
