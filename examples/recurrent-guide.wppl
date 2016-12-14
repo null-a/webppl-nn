@@ -1,0 +1,70 @@
+var iterate = function(n, prev, f) {
+  if (n === 0) {
+    return [];
+  } else {
+    var newval = f(prev);
+    return [newval].concat(iterate(n - 1, newval, f));
+  }
+};
+
+var predictNet = affine(2, 'predict');
+
+var predict = function(state) {
+  var out = predictNet(state.ctx);
+  return {
+    mu: T.get(out, 0),
+    sigma: Math.exp(T.get(out, 1))
+  };
+};
+
+var ctxdim = 4;
+var recurrentNet = gru(ctxdim, 'recurrent-net');
+
+var update = function(state, val) {
+  var newCtx = recurrentNet(state.ctx, Vector([val]));
+  return {
+    val: val,
+    ctx: newCtx,
+    pos: state.pos + 1
+  };
+};
+
+var step = function(state) {
+  var val = sample(Gaussian({mu: 0, sigma: 1}), {guide() {
+    return Gaussian(predict(state));
+  }});
+  return update(state, val);
+};
+
+var prior = function(n) {
+  var initialState = {pos: 0, ctx: param({name: 'ctx0', dims: [ctxdim, 1]})};
+  return iterate(n, initialState, step);
+};
+
+var model = function(n) {
+  var steps = prior(n);
+  var vals = _.pluck(steps, 'val');
+  assert.ok(vals.length >= 2);
+  var x = first(vals);
+  var y = last(vals);
+  var score = -40 * Math.pow(x - y, 2);
+  factor(score);
+  return {x, y};
+};
+
+// var m = Infer({
+//   model() { return model(2); },
+//   method: 'MCMC',
+//   kernel: {HMC: {}},
+//   samples: 100,
+//   burn: 500
+// });
+// viz(m);
+
+var m = Infer({
+  method: 'optimize',
+  samples: 100,
+  model() { return model(2); },
+  steps: 10000
+});
+viz(m);
