@@ -190,6 +190,9 @@ var linear = function(nout, name, maybeParamModel) {
   };
 };
 
+// TODO: It seems pretty common to not apply regularization to biases.
+// Is that important? What would it look like here?
+
 var bias = function(name, maybeParamModel, maybeInit) {
   assert.ok(name, 'A network must be given a name');
   assert.ok(maybeInit === undefined || _.isNumber(maybeInit),
