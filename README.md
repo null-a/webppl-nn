@@ -70,7 +70,7 @@ var mlp = stack([
 ]);
 ```
 
-Such functions need be parameterized by either guide or model
+Such functions need to be parameterized by either guide or model
 parameters depending on where they are used. By default, the networks
 created with these helpers are parameterized directly by guide
 parameters. When the network is intended for use in the model, one of
@@ -84,17 +84,15 @@ var modelNet = linear(10, 'net1', modelParamL2(1));
 
 The following helpers are available:
 
-`stack`
-
-`sigmoid`
-`tanh`
-
-`linear(nout, name{, paramModel})`
-`affine(nout, name{, paramModel})`
-`bias(name{, paramModel, initialBias})`
-`rnn(nout, name{, paramModel, netConstructor, nonLinearity})`
-`gru(nout, name{, paramModel, netConstructor})`
-`lstm(nout, name{, paramModel})`
+* `stack`
+* `sigmoid`
+* `tanh`
+* `linear(nout, name{, paramModel})`
+* `affine(nout, name{, paramModel})`
+* `bias(name{, paramModel, initialBias})`
+* `rnn(nout, name{, paramModel, netConstructor, nonLinearity})`
+* `gru(nout, name{, paramModel, netConstructor})`
+* `lstm(nout, name{, paramModel})`
 
 ## License
 
