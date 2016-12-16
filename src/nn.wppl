@@ -320,7 +320,7 @@ var gru = function(dim, name, maybeParamModel, maybeMakeNet) {
 
 // https://arxiv.org/abs/1308.0850
 
-var lstm = function(dim, name, maybeParamModel, maybeMakeNet) {
+var lstm = function(dim, name, maybeParamModel) {
   // dim is the total dimension of the state. i.e. memory + hidden
   // state vectors. Setting things up this way makes it easy to swap
   // between gru and lstm.
@@ -329,11 +329,10 @@ var lstm = function(dim, name, maybeParamModel, maybeMakeNet) {
   assert.ok(name, 'A network must be given a name');
   var hdim = dim / 2;
   var nnparam = maybeParamModel || param;
-  var makeNet = maybeMakeNet || affine;
-  var forget = compose(sigmoid, makeNet(hdim, name + 'forget', nnparam));
-  var input = compose(sigmoid, makeNet(hdim, name + 'input', nnparam));
-  var output = compose(sigmoid, makeNet(hdim, name + 'output', nnparam));
-  var candidate = compose(tanh, makeNet(hdim, name + 'candidate', nnparam));
+  var forget = compose(sigmoid, affine(hdim, name + 'forget', nnparam));
+  var input = compose(sigmoid, affine(hdim, name + 'input', nnparam));
+  var output = compose(sigmoid, affine(hdim, name + 'output', nnparam));
+  var candidate = compose(tanh, affine(hdim, name + 'candidate', nnparam));
   return function(prev, x) {
     // For compatibility with the interface of e.g. gru we combine the
     // memory and hidden state into a single vector, prev.
