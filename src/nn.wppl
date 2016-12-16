@@ -190,12 +190,15 @@ var linear = function(nout, name, maybeParamModel) {
   };
 };
 
-var bias = function(name, maybeParamModel) {
+var bias = function(name, maybeParamModel, maybeInit) {
   assert.ok(name, 'A network must be given a name');
+  assert.ok(maybeInit === undefined || _.isNumber(maybeInit),
+            'Initial bias should be a number');
   var nnparam = maybeParamModel || param;
+  var init = maybeInit !== undefined ? maybeInit : 0;
   return function(x) {
     var nout = dims(x)[0];
-    var b = nnparam({name, dims: [nout, 1], sigma: 0});
+    var b = nnparam({name, dims: [nout, 1], mu: init, sigma: 0});
     return T.add(x, b);
   };
 };
@@ -329,7 +332,16 @@ var lstm = function(dim, name, maybeParamModel) {
   assert.ok(name, 'A network must be given a name');
   var hdim = dim / 2;
   var nnparam = maybeParamModel || param;
-  var forget = compose(sigmoid, affine(hdim, name + 'forget', nnparam));
+  var forget = stack([
+    linear(hdim, name + 'forgetw', nnparam),
+    // It's said that initializing the biases of the forget gate to
+    // a value greater than 0 is a good idea. This is so that the output
+    // is close to one at the start of optimization, ensuring information
+    // is passed along. This is mentioned in e.g. "An Empirical
+    // Exploration of Recurrent Network Architectures".
+    bias(name + 'forgetb', nnparam, 1),
+    sigmoid
+  ]);
   var input = compose(sigmoid, affine(hdim, name + 'input', nnparam));
   var output = compose(sigmoid, affine(hdim, name + 'output', nnparam));
   var candidate = compose(tanh, affine(hdim, name + 'candidate', nnparam));
@@ -341,11 +353,6 @@ var lstm = function(dim, name, maybeParamModel) {
     var cprev = T.reshape(T.range(prev, 0, hdim), [hdim, 1]);
     var hprev = T.reshape(T.range(prev, hdim, dim), [hdim, 1]);
     var hprevx = concat([hprev, x]);
-    // TODO: It's said that initializing the biases of the forget gate
-    // to one is a good idea. This is so that the output is close to
-    // one at the start of optimization, ensuring information is
-    // passed along. This is mentioned in e.g. "An Empirical
-    // Exploration of Recurrent Network Architectures".
     var f = forget(hprevx);
     var i = input(hprevx);
     var o = output(hprevx);
