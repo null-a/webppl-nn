@@ -5,7 +5,9 @@
   "main": "src/nn.js",
   "webppl": {
     "wppl": [
-       "src/nn.wppl"
+      "src/nn.wppl",
+      "src/normalization.wppl",
+      "src/recurrent.wppl"
      ]
   },
   "scripts": {
