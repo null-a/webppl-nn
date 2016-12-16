@@ -18,7 +18,7 @@ var predict = function(state) {
 };
 
 var ctxdim = 4;
-var recurrentNet = gru(ctxdim, 'recurrent-net');
+var recurrentNet = rnn(ctxdim, 'recurrent-net');
 
 var update = function(state, val) {
   var newCtx = recurrentNet(state.ctx, Vector([val]));

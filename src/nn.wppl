@@ -287,6 +287,21 @@ var linearWeightNorm = function(nout, name, maybeParamModel) {
   };
 };
 
+// Traditional RNN
+
+var rnn = function(dim, name, maybeParamModel, maybeMakeNet, maybeNonLinearity) {
+  assert.ok(Number.isInteger(dim), 'dim should be an integer');
+  assert.ok(name, 'A network must be given a name');
+  var makeNet = maybeMakeNet || affine;
+  var nonLin = maybeNonLinearity || tanh;
+  var net = compose(compose(nonLin, makeNet(dim, name, maybeParamModel)), concat);
+  return function(hprev, x) {
+    assert.ok(dims(hprev)[0] === dim,
+              'Previous hidden vector has unexpected dimension');
+    return net([hprev, x]);
+  };
+};
+
 // Gated Recurrent Unit
 
 // This is similar to the variant described in "Empirical Evaluation
