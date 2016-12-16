@@ -18,10 +18,22 @@ var predict = function(state) {
 };
 
 var ctxdim = 4;
-var recurrentNet = rnn(ctxdim, 'recurrent-net');
+// This is capable of spotting the correlation on models of length of
+// at least 50, with just 4 hidden units.
+var recurrentNet = linearRNN(ctxdim, 'recurrent-net');
+
+// TODO: Next, try additional correlations, non-linear correlations?
 
 var update = function(state, val) {
-  var newCtx = recurrentNet(state.ctx, Vector([val]));
+  // Added `pos` for the linearRNN. This is important (perhaps
+  // crucial) to make that work. My sense is that by initializing this
+  // to zero, we avoid swamping the net with noise (from sampled
+  // values) at the beginning of optimization. Values useful for
+  // modeling the correlation can be added, other ignored. Similarly,
+  // it also ensures that the hidden state of the RNN (which has no
+  // non-linearities) doesn't get out of control.
+  var pos = param({name: 'pos' + state.pos, mu: 0, sigma: 0});
+  var newCtx = recurrentNet(state.ctx, Vector([val * pos]));
   return {
     val: val,
     ctx: newCtx,
