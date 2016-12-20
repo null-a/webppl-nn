@@ -87,6 +87,8 @@ The following helpers are available:
 * `stack`
 * `sigmoid`
 * `tanh`
+* `relu`
+* `lrelu`
 * `linear(nout, name{, paramModel})`
 * `affine(nout, name{, paramModel})`
 * `bias(name{, paramModel, initialBias})`

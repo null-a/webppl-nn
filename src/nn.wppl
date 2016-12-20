@@ -129,6 +129,14 @@ var tanh = function(x) {
   return T.tanh(x);
 };
 
+var relu = function(x) {
+  return webpplNn.relu(x);
+};
+
+var lrelu = function(x) {
+  return webpplNn.lrelu(x);
+};
+
 // Compose several functions in left to right order.
 // stack([f, g, h]) == compose(compose(h, g), f)
 var stack = function(arr) {

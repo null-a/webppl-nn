@@ -36,7 +36,55 @@ var sumreduce0 = ad.newUnaryFunction({
   }
 });
 
+function _relu(t) {
+  var _t = t;
+  var out = new Tensor(_t.dims);
+  for (var i = 0; i < _t.length; i++) {
+    out.data[i] = _t.data[i] < 0 ? 0 : _t.data[i];
+  }
+  return out;
+}
+
+var relu = ad.newUnaryFunction({
+  OutputType: Tensor,
+  name: 'relu',
+  forward: function(t) {
+    return _relu(t);
+  },
+  backward: function(x) {
+    for (var i = 0; i < x.x.length; i++) {
+      x.dx.data[i] += x.x.data[i] < 0 ? 0 : this.dx.data[i];
+    }
+  }
+});
+
+var leakyness = 100;
+
+function _lrelu(t) {
+  var _t = t;
+  var out = new Tensor(_t.dims);
+  for (var i = 0; i < _t.length; i++) {
+    out.data[i] = _t.data[i] < 0 ? _t.data[i] / leakyness : _t.data[i];
+  }
+  return out;
+}
+
+var lrelu = ad.newUnaryFunction({
+  OutputType: Tensor,
+  name: 'lrelu',
+  forward: function(t) {
+    return _relu(t);
+  },
+  backward: function(x) {
+    for (var i = 0; i < x.x.length; i++) {
+      x.dx.data[i] += x.x.data[i] < 0 ? this.dx.data[i] / leakyness : this.dx.data[i];
+    }
+  }
+});
+
 module.exports = {
   sumreduce0: sumreduce0,
-  _sumreduce0: _sumreduce0
+  _sumreduce0: _sumreduce0,
+  relu: relu,
+  lrelu: lrelu
 };
