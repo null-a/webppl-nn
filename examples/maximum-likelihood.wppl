@@ -1,24 +1,26 @@
-var p0 = Optimize({
+Optimize({
   steps: 1000,
   optMethod: {adam: {stepSize: .1}},
   model() {
-    var mu = modelParam({name: 'mu'});
+    var mu = modelParam({name: 'mu0'});
     observe(Gaussian({mu, sigma: 1}), 2);
   }
 });
 
-var p1 = Optimize({
+Optimize({
   steps: 1000,
   optMethod: {adam: {stepSize: .1}},
   model() {
-    var mu = modelParamL2(1)({name: 'mu'});
+    var mu = modelParamL2(1)({name: 'mu1'});
     // Fetching the parameter again should not change the result.
     //modelParamL2(1)({name: 'mu'});
     observe(Gaussian({mu, sigma: 1}), 2);
   }
 });
 
+var params = getParams();
+
 // Without regularization the optimal setting of mu is 2. With the
 // above L2 regularization, the optimal setting of mu is 1.
-display(p0.mu[0].data);
-display(p1.mu[0].data);
+display(params.mu0[0].data);
+display(params.mu1[0].data);
