@@ -68,10 +68,10 @@ helper makes the common pattern of stacking "layers" more readable.
 
 ```js
 var mlp = stack([
-  affine(5, 'layer1'),
-  tanh,
+  sigmoid,
   affine(1, 'layer2'),
-  sigmoid
+  tanh,
+  affine(5, 'layer1')
 ]);
 ```
 
