@@ -14,7 +14,7 @@ by running:
 
     webppl program.wppl --require webppl-nn
 
-## Docs
+## Introduction
 
 ### Model Parameters
 
@@ -82,19 +82,57 @@ var guideNet = linear(10, 'net1');
 var modelNet = linear(10, 'net1', modelParamL2(1));
 ```
 
-The following helpers are available:
+## Reference
 
-* `stack`
-* `sigmoid`
-* `tanh`
-* `relu`
-* `lrelu`
-* `linear(nout, name{, paramModel})`
-* `affine(nout, name{, paramModel})`
-* `bias(name{, paramModel, initialBias})`
-* `rnn(nout, name{, paramModel, netConstructor, nonLinearity})`
-* `gru(nout, name{, paramModel, netConstructor})`
-* `lstm(nout, name{, paramModel})`
+### Networks
+
+There are a few wrinkles in the current implementation that you should
+be aware of.
+
+* The input dimension of a network is determined when it is first
+  used. Passing an input of differing dimension on later uses will not
+  work, and is likely to generate an unhelpful error.
+
+* Parameter sharing can be induced by reusing network names. Care must
+  currently be taken to ensure that all nets with a given name, also
+  share the same dimension and (when specified) the same parameter
+  model. Failing to do this will probably lead to subtle bugs.
+
+* All networks must be named. Care has to be taken to give nets unique
+  names when sharing is not required.
+
+#### `linear(nout, name{, paramModel})`
+#### `affine(nout, name{, paramModel})`
+
+These return a parameterized function of a single argument. This
+function maps a vector to a vector of length `nout`.
+
+#### `bias(name{, paramModel, initialBias})`
+
+Returns a parameterized function of a single argument. This function
+maps vectors of length `n` to vectors of length `n`.
+
+#### `rnn(nout, name{, paramModel, netConstructor, nonLinearity})`
+#### `gru(nout, name{, paramModel, netConstructor})`
+#### `lstm(nout, name{, paramModel})`
+
+These return parameterized function of two arguments. This function
+maps a state vector and an input vector to a new state vector.
+
+### Non-linearities
+
+#### `sigmoid(x)`
+#### `tanh(x)`
+#### `relu(x)`
+#### `lrelu(x)`
+
+Leaky rectified linear unit.
+
+### Utilities
+
+#### `stack(fns)`
+
+Returns the composition of the array of functions `fns`.
 
 ## License
 
