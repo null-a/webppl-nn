@@ -137,15 +137,10 @@ var lrelu = function(x) {
   return webpplNn.lrelu(x);
 };
 
-// Compose several functions in left to right order.
-// stack([f, g, h]) == compose(compose(h, g), f)
+// Compose several functions in right to left order.
+// stack([f, g, h]) == compose(f, compose(g, h))
 var stack = function(arr) {
-  var iter = function(i) {
-    return (arr.length === i) ?
-        idF :
-        compose(iter(i + 1), arr[i]);
-  };
-  return iter(0);
+  return reduce(compose, idF, arr);
 };
 
 // When a network is used in the model we often want to include a

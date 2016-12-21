@@ -132,7 +132,8 @@ Leaky rectified linear unit.
 
 #### `stack(fns)`
 
-Returns the composition of the array of functions `fns`.
+Returns the composition of the array of functions `fns`. The functions
+in `fns` are applied in right to left order.
 
 ## License
 

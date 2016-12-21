@@ -31,9 +31,9 @@ var affineWithLayerNorm = function(nout, name, maybeModelParam) {
   var nnparam = maybeModelParam || param;
   assert.ok(name, 'A network must be given a name');
   return stack([
-    linear(nout, name + 'w', nnparam),
+    bias(name + 'b', nnparam),
     layerNorm(name + 'ln', nnparam),
-    bias(name + 'b', nnparam)
+    linear(nout, name + 'w', nnparam)
   ]);
 };
 

@@ -80,14 +80,14 @@ var lstm = function(dim, name, maybeParamModel) {
   var hdim = dim / 2;
   var nnparam = maybeParamModel || param;
   var forget = stack([
-    linear(hdim, name + 'forgetw', nnparam),
+    sigmoid,
     // It's said that initializing the biases of the forget gate to
     // a value greater than 0 is a good idea. This is so that the output
     // is close to one at the start of optimization, ensuring information
     // is passed along. This is mentioned in e.g. "An Empirical
     // Exploration of Recurrent Network Architectures".
     bias(name + 'forgetb', nnparam, 1),
-    sigmoid
+    linear(hdim, name + 'forgetw', nnparam)
   ]);
   var input = compose(sigmoid, affine(hdim, name + 'input', nnparam));
   var output = compose(sigmoid, affine(hdim, name + 'output', nnparam));
