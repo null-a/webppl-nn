@@ -14,6 +14,11 @@ by running:
 
     webppl program.wppl --require webppl-nn
 
+## Compatibility
+
+This package currently requires the development version of WebPPL.
+(i.e. The tip of the `dev` branch.)
+
 ## Introduction
 
 ### Model Parameters
