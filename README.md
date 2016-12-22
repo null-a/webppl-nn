@@ -14,6 +14,10 @@ by running:
 
     webppl program.wppl --require webppl-nn
 
+## Status
+
+This package is very experimental. Expect frequent breaking changes.
+
 ## Compatibility
 
 This package currently requires the development version of WebPPL.
