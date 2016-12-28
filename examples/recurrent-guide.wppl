@@ -55,7 +55,7 @@ var prior = function(n) {
 
 var model = function(n) {
   var steps = prior(n);
-  var vals = _.pluck(steps, 'val');
+  var vals = _.map(steps, 'val');
   assert.ok(vals.length >= 2);
   var x = first(vals);
   var y = last(vals);
