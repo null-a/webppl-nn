@@ -91,9 +91,7 @@ var guideNet = linear(10, 'net1');
 var modelNet = linear(10, 'net1', modelParamL2(1));
 ```
 
-## Reference
-
-### Networks
+#### Design Issues
 
 There are a few wrinkles in the current implementation that you should
 be aware of.
@@ -109,6 +107,10 @@ be aware of.
 
 * All networks must be named. Care has to be taken to give nets unique
   names when sharing is not required.
+
+## Reference
+
+### Networks
 
 #### `linear(nout, name{, paramModel})`
 #### `affine(nout, name{, paramModel})`
@@ -136,6 +138,14 @@ maps a state vector and an input vector to a new state vector.
 #### `lrelu(x)`
 
 Leaky rectified linear unit.
+
+### Model Parameters
+
+#### `modelParamL2(sd)`
+
+Returns a function that creates model parameters with a `Gaussian({mu:
+0, sigma: sd})` prior. The returned function has the same interface as
+`param` and `modelParam`.
 
 ### Utilities
 
