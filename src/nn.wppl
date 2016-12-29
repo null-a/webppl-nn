@@ -181,6 +181,14 @@ var stack = function(arr) {
 // Splitting apart these two operations would offer a number of ways
 // of addressing this I think.
 
+
+// Nets created with "linear" use a weight initialization based on
+// "Understanding the difficulty of training deep feedforward neural
+// networks", often called Xavier initialization.
+
+// TODO: This initialization scheme may not be suitable for asymmetric
+// non-linearities.
+
 var linear = function(nout, name, maybeParamModel) {
   var nnparam = maybeParamModel || param;
   assert.ok(Number.isInteger(nout), 'nout should be an integer.');
