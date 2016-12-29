@@ -13,24 +13,6 @@ var rnn = function(dim, name, maybeParamModel, maybeMakeNet, maybeNonLinearity) 
   };
 };
 
-// This is used in the recurrent guide example, where it works
-// particularly well.
-var linearRNN = function(dim, name, maybeParamModel) {
-  assert.ok(Number.isInteger(dim), 'dim should be an integer');
-  assert.ok(name, 'A network must be given a name');
-  var nnparam = maybeParamModel || param;
-  var I = T.diagonal(ones([dim, 1]));
-  var lin = linear(dim, name + 'linear', nnparam);
-  return function(hprev, x) {
-    assert.ok(dims(hprev)[0] === dim,
-              'Previous hidden vector has unexpected dimension');
-    var w = nnparam({name: name + 'w', dims: [dim, dim], sigma: 0});
-    var c = T.dot(T.add(I, w), hprev);
-    var u = lin(x);
-    return T.add(c, u);
-  };
-};
-
 // Gated Recurrent Unit
 
 // This is similar to the variant described in "Empirical Evaluation
