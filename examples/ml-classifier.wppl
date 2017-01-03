@@ -21,14 +21,14 @@ var model = function() {
   });
 };
 
-var params = Optimize({
+Optimize({
   model,
   steps: 1000,
   optMethod: {adam: {stepSize: .1}}});
 
 // Here we create a function that runs the net using the optimized
 // parameters.
-var optimizedClassifier = withParams(params, classifierNet);
+var optimizedClassifier = usingGuide(classifierNet);
 
 // Inspect the optimized function by passing some values through it.
 map(function(x) {

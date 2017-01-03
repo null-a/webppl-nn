@@ -19,14 +19,13 @@ var mem1 = function(f) {
 // optimized programs. I think we can do more/better though.
 
 // Calling the regular function `fn` evaluates the function, sampling
-// from the target. Calling the result of withParams(params, fn)
-// evaluates the function sampling from the guide using the parameters
-// given by "params".
+// from the target. Calling the result of usingParams(fn) evaluates
+// the function sampling from the guide.
 
-var withParams = function(params, fn) {
+var usingGuide = function(fn) {
   return function() {
     var args = arguments;
-    sample(Infer({params, method: 'forward', samples: 1, guide: true, model() {
+    sample(Infer({method: 'forward', samples: 1, guide: true, model() {
       return ad.valueRec(apply(fn, args));
     }}));
   };
