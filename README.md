@@ -91,7 +91,11 @@ var guideNet = linear(10, 'net1');
 var modelNet = linear(10, 'net1', modelParamL2(1));
 ```
 
-#### Design Issues
+## Examples
+
+* [Variational Auto-encoder](https://github.com/null-a/webppl-nn/blob/master/examples/vae.wppl)
+
+## Design Issues
 
 There are a few wrinkles in the current implementation that you should
 be aware of.
