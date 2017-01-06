@@ -116,20 +116,20 @@ be aware of.
 
 ### Networks
 
-#### `linear(nout, name{, paramModel})`
-#### `affine(nout, name{, paramModel})`
+#### `linear(nout, name[, paramModel])`
+#### `affine(nout, name[, paramModel])`
 
 These return a parameterized function of a single argument. This
 function maps a vector to a vector of length `nout`.
 
-#### `bias(name{, paramModel, initialBias})`
+#### `bias(name[, paramModel, initialBias])`
 
 Returns a parameterized function of a single argument. This function
 maps vectors of length `n` to vectors of length `n`.
 
-#### `rnn(nout, name{, paramModel, netConstructor, nonLinearity})`
-#### `gru(nout, name{, paramModel, netConstructor})`
-#### `lstm(nout, name{, paramModel})`
+#### `rnn(nout, name[, paramModel, netConstructor, nonLinearity])`
+#### `gru(nout, name[, paramModel, netConstructor])`
+#### `lstm(nout, name[, paramModel])`
 
 These return parameterized function of two arguments. This function
 maps a state vector and an input vector to a new state vector.
