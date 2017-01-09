@@ -1,0 +1,221 @@
+// Structured Inference Networks for Nonlinear State Space Models
+// https://arxiv.org/abs/1609.09869
+
+// Requires the version of webppl available as pull request #745.
+
+// Run with:
+// webppl examples/dmm.wppl --require .
+
+// Delta between this and the model described in the paper:
+
+// 1. We don't compute any KL terms analytically.
+// 2. We parameterize sigma with our nets, rather than sigma^2.
+
+// HELPERS -----------------------------------------------------------
+
+var reduceLeft = function(f, init, arr) {
+  // if (arr.length > 0) {
+  //   return reduceLeft(f, f(init, arr[0]), rest(arr));
+  // } else {
+  //   return init;
+  // }
+  var helper = function(i, init) {
+    if (i < arr.length) {
+      return helper(i + 1, f(init, arr[i]));
+    } else {
+      return init;
+    }
+  };
+  return helper(0, init);
+};
+
+var softplus = function(t) {
+  return T.log(T.add(T.exp(t), 1));
+};
+
+// PARAMETERS --------------------------------------------------------
+
+// Appendix C describes the size of the nets for each experiment.
+
+var zDim = 2;//100;
+var xDim = 1;//88;
+var transitionDim = 5;//100;
+var emissionDim = 5;//200;
+var rnnDim = 5;
+
+// MODEL NETS --------------------------------------------------------
+
+// See section 5 for the description of the emission and transition
+// functions.
+
+// "gated transition function"
+var gNet = stack([
+  sigmoid,
+  affine(zDim, 'gNetH2', modelParamL2(1)),
+  relu,
+  affine(transitionDim, 'gNetH1', modelParamL2(1))
+]);
+
+var hNet = stack([
+  affine(zDim, 'hNetH2', modelParamL2(1)),
+  relu,
+  affine(transitionDim, 'hNetH1', modelParamL2(1))
+]);
+
+// TODO: Init. weight of muNet to identity matrix.
+var muNet = affine(zDim, 'muNet', modelParamL2(1));
+
+var sigmaNet = stack([
+  softplus,
+  affine(zDim, 'sigmaNetHid', modelParamL2(1)),
+  relu
+]);
+
+var zDist = function(zPrev) {
+  if (zPrev === undefined) {
+    return TensorGaussian({mu: 0, sigma: 1, dims: [zDim, 1]});
+  }
+  else {
+    var g = gNet(zPrev);
+    var h = hNet(zPrev);
+    var mu = T.add(
+      T.mul(T.add(T.neg(g), 1), muNet(zPrev)),
+      T.mul(g, h));
+    var sigma = sigmaNet(h);
+    return DiagCovGaussian({mu, sigma});
+  }
+};
+
+// "emission function"
+var emissionNet = stack([
+  sigmoid,
+  affine(xDim, 'emissionNetH3', modelParamL2(1)),
+  relu,
+  affine(emissionDim, 'emissionNetH2', modelParamL2(1)),
+  relu,
+  affine(emissionDim, 'emissionNetH1', modelParamL2(1))
+]);
+
+var xDist = function(z) {
+  var ps = emissionNet(z);
+  return MultivariateBernoulli({ps});
+};
+
+// GUIDE NETS --------------------------------------------------------
+
+// See section 4.
+
+// This is the DKS variant described in the paper.
+
+// We need the RNN to consume all of the observations (starting with
+// the final observation) before we can output guide parameters for
+// the first latent variable. We do that here, storing the RNN state
+// in the global store for later use.
+
+// To generate guide parameters we need to know where we are in the
+// sequence so we can use the corresponding RNN state generated
+// earlier. For now we track this using the global store.
+
+// TODO: Make this a parameter?
+var rnnInitialState = zeros([rnnDim, 1]);
+var rnn = gru(rnnDim, 'rnn');
+
+var init = function(sequence) {
+  return function() {
+    // Initialize state.
+    globalStore.t = 0;
+    // Run the RNN.
+    globalStore.rnnStates = [];
+    reduce(function(obs, prevState) {
+      var state = rnn(prevState, obs);
+      // Put the new state on the from of the array so that when we're
+      // done, the rnn states are in temporal order. I think
+      // performace of runRNN will have undesirable asymptotics
+      // whether we do this or stick it on the end. Is there a way to
+      // avoid this other than judicious use of mutation?
+      globalStore.rnnStates = [state].concat(globalStore.rnnStates);
+      return state;
+    }, rnnInitialState, sequence);
+  };
+};
+
+// The "combiner function". This is what we've typically called the
+// predict net in daipp.
+
+var z0 = zeros([zDim, 1]);
+
+var embedNet = compose(tanh, affine(rnnDim, 'embedNet'));
+var muParamNet = affine(zDim, 'muParamNet');
+var sigmaParamNet = compose(softplus, affine(zDim, 'sigmaParamNet'));
+
+// The guide at each time step is conditioned on the previous hidden
+// state (which we pass in here since we it's already to hand in the
+// model) and all future observations. (Via the RNN hidden state,
+// which is available via the global store.).
+
+var zGuide = function(zPrev) {
+  return function() {
+    var t = globalStore.t;
+    var state = globalStore.rnnStates[t];
+    var hCombined = T.mul(T.add(embedNet(zPrev || z0), state), 0.5);
+    var mu = muParamNet(hCombined);
+    var sigma = sigmaParamNet(hCombined);
+    globalStore.t = t + 1;
+    return DiagCovGaussian({mu, sigma});
+  };
+};
+
+// MODEL -------------------------------------------------------------
+
+var model = function(data) {
+  return mapData({data}, function(sequence) {
+    guide(init(sequence));
+    return reduceLeft(function(zPrev, obs) {
+      var z = sample(zDist(zPrev), {guide: zGuide(zPrev)});
+      observe(xDist(z), obs);
+      return z;
+    }, undefined, sequence);
+  });
+};
+
+// After optimization we want to sample from the guide, conditioned on
+// some input. To do that we need keep track of all previous z during
+// the `reduceLeft`. `obsFn` does this. We could also use this in
+// `model`, but it's asymptotically slower than just keeping the most
+// recent latent around. (Thought this may not matter much.) I've not
+// decided how best to fix this yet. (My proposed fix for the `map`
+// relies on allocating the output array ahead of this, but this
+// strategy can't work for `reduce` in general, since we don't always
+// return an array. Ugh.)
+
+var obsFn = function(sequence) {
+  guide(init(sequence));
+  return reduceLeft(function(prev, obs) {
+    var zPrev = (prev.length > 0) ? last(prev) : undefined;
+    var z = sample(zDist(zPrev), {guide: zGuide(zPrev)});
+    observe(xDist(z), obs);
+    return prev.concat(z);
+  }, [], sequence);
+};
+
+var runGuideNet = usingGuide(obsFn);
+
+// We might also want to generate samples from the model using
+// optimized parameters. This is tricky to do with the current
+// implementation, since what that amounts to is sampling optimized
+// weights for the (model nets) from the guide, but sampling x and z
+// from the model. (Is the right? The first `z` would also be drawn
+// from TensorGaussian({mu: 0, sigma: 1})?)
+
+// One work-around would be to ditch `modelParam` from model nets,
+// then after optimization sampling from the prior would automatically
+// use optimized model nets.
+
+// OPTIMIZATION ------------------------------------------------------
+
+var obs = map(function(x) { return Vector([x]); }, [0,1,1]);
+Infer({method: 'forward', guide: 0, samples: 1, model() { model([obs]); }});
+
+display('------------------------------');
+
+runGuideNet(obs);
