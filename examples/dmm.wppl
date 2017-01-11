@@ -254,7 +254,7 @@ var posterior = usingGuide(obsFn);
 // var obs = map(function(x) { return Vector([x]); }, [0,1,1]);
 // Infer({method: 'forward', guide: 0, samples: 1, model() { model([obs]); }});
 
-var data = loadMusic('examples/data/jsb-chorales.json', 'train');
+var data = loadMusic('examples/data/music/JSB-chorales.json', 'train');
 
 Optimize({
   model() { return model(data); },
