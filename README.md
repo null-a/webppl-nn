@@ -140,6 +140,7 @@ maps a state vector and an input vector to a new state vector.
 #### `tanh(x)`
 #### `relu(x)`
 #### `lrelu(x)`
+#### `softplus(x)`
 
 Leaky rectified linear unit.
 

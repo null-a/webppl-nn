@@ -124,6 +124,10 @@ var oneHot = function(index, length) {
   return webpplNn.oneHot(index, length);
 };
 
+var softplus = function(x) {
+  return T.log(T.add(T.exp(x), 1));
+};
+
 var sigmoid = function(x) {
   return T.sigmoid(x);
 };
