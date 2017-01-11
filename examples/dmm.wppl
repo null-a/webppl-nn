@@ -46,7 +46,7 @@ var loadMusic = function(fn, part) {
 
 // PARAMETERS --------------------------------------------------------
 
-var fullSize = false;
+var fullSize = true;
 
 // Appendix C describes the size of the nets for each experiment.
 var xDim = 88;
@@ -262,8 +262,11 @@ var data = loadMusic('examples/data/music/JSB-chorales.json', 'train');
 
 Optimize({
   model() { return model(data); },
-  steps: 1000,
+  steps: 2000,
   optMethod: {adam: {stepSize: 0.0008}},
   logProgress: true,
   checkpointParams: true
 });
+
+// var x = _.map(posteriorPredictive(100), _.method('x.toFlatArray'));
+// fs.write('sample.json', JSON.stringify(x));
