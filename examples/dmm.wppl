@@ -238,16 +238,17 @@ var obsFn = function(sequence) {
 // samples from q(z|x)
 var posterior = usingGuide(obsFn);
 
-// We might also want to generate samples from the model using
-// optimized parameters. This is tricky to do with the current
-// implementation, since what that amounts to is sampling optimized
-// weights for the (model nets) from the guide, but sampling x and z
-// from the model. (Is the right? The first `z` would also be drawn
-// from TensorGaussian({mu: 0, sigma: 1})?)
-
-// One work-around would be to ditch `modelParam` from model nets,
-// then after optimization sampling from the prior would automatically
-// use optimized model nets.
+// samples from p(x,z|data)
+var posteriorPredictive = usingGuide(function(length) {
+  return reduceLeft(function(prev, i) {
+    var zPrev = (prev.length > 0) ? last(prev).z : undefined;
+    // TODO: Add option to allow sampling from target rather than
+    // guide here.
+    var z = sample(zDist(zPrev), {guide: constF(zDist(zPrev))});
+    var x = sample(xDist(z), {guide: constF(xDist(z))});
+    return prev.concat({z, x});
+  }, [], _.range(length));
+});
 
 // OPTIMIZATION ------------------------------------------------------
 
