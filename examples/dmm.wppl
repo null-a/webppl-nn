@@ -10,7 +10,7 @@
 
 // 1. We don't compute any KL terms analytically.
 // 2. We parameterize sigma with our nets, rather than sigma^2.
-// 3. No regularization. (?)
+// 3. Regularization. Different strength in model? None for guide.
 // 4. No dropout in RNN. (?)
 // 5. Weight init. e.g. ortho for LSTM, what else?
 // 6. Step sizes are probably not comparable because ML people usually
@@ -59,6 +59,9 @@ var rnnDim = fullSize ? 400 : 5; // or 600
 // is taken from the paper and I assume it's correct, though the code
 // make it look like twice this size is used.
 
+// Model parameters have Gaussian prior with this s.d.
+var mParam = modelParamL2(1);
+
 // Also see:
 // https://github.com/clinicalml/structuredinference/blob/7fd2e774a8aebe3a946a24a28c4f50d623f64014/parse_args_dkf.py
 
@@ -70,19 +73,19 @@ var rnnDim = fullSize ? 400 : 5; // or 600
 // "gated transition function"
 var gNet = stack([
   sigmoid,
-  affine(zDim, 'gNetH2', modelParamL2(1)),
+  affine(zDim, 'gNetH2', mParam),
   relu,
-  affine(transitionDim, 'gNetH1', modelParamL2(1))
+  affine(transitionDim, 'gNetH1', mParam)
 ]);
 
 var hNet = stack([
-  affine(zDim, 'hNetH2', modelParamL2(1)),
+  affine(zDim, 'hNetH2', mParam),
   relu,
-  affine(transitionDim, 'hNetH1', modelParamL2(1))
+  affine(transitionDim, 'hNetH1', mParam)
 ]);
 
 
-//var muNet = affine(zDim, 'muNet', modelParamL2(1));
+//var muNet = affine(zDim, 'muNet', mParam);
 
 // Since we don't have the option to init. the weight matrix to the
 // identity in webppl-nn, we instead parameterize this as a
@@ -92,15 +95,15 @@ var hNet = stack([
 // regularize towards 0.
 var muNetI = idMatrix(zDim);
 var muNet = compose(
-  bias('muNetb', modelParamL2(1)),
+  bias('muNetb', mParam),
   function(x) {
-    var w = modelParamL2(1)({name: 'muNetw', dims: [zDim, zDim]});
+    var w = mParam({name: 'muNetw', dims: [zDim, zDim]});
     return T.dot(T.add(muNetI, w), x);
   });
 
 var sigmaNet = stack([
   softplus,
-  affine(zDim, 'sigmaNetHid', modelParamL2(1)),
+  affine(zDim, 'sigmaNetHid', mParam),
   relu
 ]);
 
@@ -122,11 +125,11 @@ var zDist = function(zPrev) {
 // "emission function"
 var emissionNet = stack([
   sigmoid,
-  affine(xDim, 'emissionNetH3', modelParamL2(1)),
+  affine(xDim, 'emissionNetH3', mParam),
   relu,
-  affine(emissionDim, 'emissionNetH2', modelParamL2(1)),
+  affine(emissionDim, 'emissionNetH2', mParam),
   relu,
-  affine(emissionDim, 'emissionNetH1', modelParamL2(1))
+  affine(emissionDim, 'emissionNetH1', mParam)
 ]);
 
 var xDist = function(z) {
