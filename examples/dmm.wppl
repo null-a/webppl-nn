@@ -61,7 +61,7 @@ var rnnDim = fullSize ? 400 : 5; // or 600
 // make it look like twice this size is used.
 
 // Model parameters have Gaussian prior with this s.d.
-var mParam = modelParamL2(1);
+var mParam = undefined;//modelParamL2(100);
 
 // Also see:
 // https://github.com/clinicalml/structuredinference/blob/7fd2e774a8aebe3a946a24a28c4f50d623f64014/parse_args_dkf.py
@@ -98,7 +98,7 @@ var muNetI = idMatrix(zDim);
 var muNet = compose(
   bias('muNetb', mParam),
   function(x) {
-    var w = mParam({name: 'muNetw', dims: [zDim, zDim]});
+    var w = param({name: 'muNetw', dims: [zDim, zDim]});
     return T.dot(T.add(muNetI, w), x);
   });
 
