@@ -29,10 +29,6 @@ var reduceLeft = function(f, init, arr) {
   return helper(0, init);
 };
 
-var softplus = function(t) {
-  return T.log(T.add(T.exp(t), 1));
-};
-
 // PARAMETERS --------------------------------------------------------
 
 // Appendix C describes the size of the nets for each experiment.
