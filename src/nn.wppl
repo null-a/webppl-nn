@@ -120,6 +120,10 @@ var concat = function(arr) {
   return T.reshape(t, [dims(t)[0], 1]);
 };
 
+var idMatrix = function(n) {
+  return webpplNn.idMatrix(n);
+};
+
 var oneHot = function(index, length) {
   return webpplNn.oneHot(index, length);
 };

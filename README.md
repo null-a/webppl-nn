@@ -159,6 +159,10 @@ Returns a function that creates model parameters with a `Gaussian({mu:
 Returns the composition of the array of functions `fns`. The functions
 in `fns` are applied in right to left order.
 
+#### `idMatrix(n)`
+
+Returns the `n` by `n` identity matrix.
+
 #### `oneHot(index, length)`
 
 Returns a vector with length `length` in which all entries are zero

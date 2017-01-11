@@ -82,6 +82,17 @@ var lrelu = ad.newUnaryFunction({
   }
 });
 
+function idMatrix(n) {
+  if (n <= 0) {
+    throw new Error('n should be > 0.');
+  }
+  var out = new Tensor([n, n]);
+  for (var i = 0; i < n; i++) {
+    out.data[i * (n + 1)] = 1;
+  }
+  return out;
+}
+
 function oneHot(index, length) {
   if (length <= 0) {
     throw new Error('length should be > 0.');
@@ -99,5 +110,6 @@ module.exports = {
   _sumreduce0: _sumreduce0,
   relu: relu,
   lrelu: lrelu,
+  idMatrix: idMatrix,
   oneHot: oneHot
 };
