@@ -73,7 +73,7 @@ var lrelu = ad.newUnaryFunction({
   OutputType: Tensor,
   name: 'lrelu',
   forward: function(t) {
-    return _relu(t);
+    return _lrelu(t);
   },
   backward: function(x) {
     for (var i = 0; i < x.x.length; i++) {
@@ -82,9 +82,22 @@ var lrelu = ad.newUnaryFunction({
   }
 });
 
+function oneHot(index, length) {
+  if (length <= 0) {
+    throw new Error('length should be > 0.');
+  }
+  if (index < 0 || index >= length) {
+    throw new Error('index out of bounds');
+  }
+  var out = new Tensor([length, 1]);
+  out.data[index] = 1;
+  return out;
+}
+
 module.exports = {
   sumreduce0: sumreduce0,
   _sumreduce0: _sumreduce0,
   relu: relu,
-  lrelu: lrelu
+  lrelu: lrelu,
+  oneHot: oneHot
 };

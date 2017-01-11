@@ -140,6 +140,7 @@ maps a state vector and an input vector to a new state vector.
 #### `tanh(x)`
 #### `relu(x)`
 #### `lrelu(x)`
+#### `softplus(x)`
 
 Leaky rectified linear unit.
 
@@ -157,6 +158,11 @@ Returns a function that creates model parameters with a `Gaussian({mu:
 
 Returns the composition of the array of functions `fns`. The functions
 in `fns` are applied in right to left order.
+
+#### `oneHot(index, length)`
+
+Returns a vector with length `length` in which all entries are zero
+except for the entry at `index` which is one.
 
 ## License
 

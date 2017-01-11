@@ -120,6 +120,14 @@ var concat = function(arr) {
   return T.reshape(t, [dims(t)[0], 1]);
 };
 
+var oneHot = function(index, length) {
+  return webpplNn.oneHot(index, length);
+};
+
+var softplus = function(x) {
+  return T.log(T.add(T.exp(x), 1));
+};
+
 var sigmoid = function(x) {
   return T.sigmoid(x);
 };
