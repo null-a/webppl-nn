@@ -194,7 +194,8 @@ var obsFn = function(sequence) {
   }, [], sequence);
 };
 
-var runGuideNet = usingGuide(obsFn);
+// samples from q(z|x)
+var posterior = usingGuide(obsFn);
 
 // We might also want to generate samples from the model using
 // optimized parameters. This is tricky to do with the current
@@ -214,4 +215,4 @@ Infer({method: 'forward', guide: 0, samples: 1, model() { model([obs]); }});
 
 display('------------------------------');
 
-runGuideNet(obs);
+posterior(obs);
