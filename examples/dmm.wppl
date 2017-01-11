@@ -19,6 +19,7 @@
 // 7. We don't initialize the weight matrix of the linear network
 // (called muNet here) that forms part of the transition function in
 // quite the same way.
+// 8. No KL term annealing yet.
 
 // HELPERS -----------------------------------------------------------
 
@@ -167,6 +168,7 @@ var init = function(sequence) {
     // Run the RNN.
     globalStore.rnnStates = [];
     reduce(function(obs, prevState) {
+      // TODO: Would centering the observations help here?
       var state = rnn(prevState, obs);
       // Put the new state on the from of the array so that when we're
       // done, the rnn states are in temporal order. I think
