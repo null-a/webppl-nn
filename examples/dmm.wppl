@@ -266,6 +266,7 @@ Optimize({
   model() { return model(data); },
   steps: 2000,
   optMethod: {adam: {stepSize: 0.0008}},
+  showGradNorm: true,
   logProgress: true,
   checkpointParams: true
 });
