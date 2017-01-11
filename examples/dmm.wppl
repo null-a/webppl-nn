@@ -10,6 +10,12 @@
 
 // 1. We don't compute any KL terms analytically.
 // 2. We parameterize sigma with our nets, rather than sigma^2.
+// 3. No regularization. (?)
+// 4. No dropout in RNN. (?)
+// 5. Weight init. e.g. ortho for LSTM, what else?
+// 6. Step sizes are probably not comparable because ML people usually
+// divide mini-batch gradients by the batch size, where as we
+// effectively multiple them by len(data)/batchSize.
 
 // HELPERS -----------------------------------------------------------
 
@@ -29,15 +35,29 @@ var reduceLeft = function(f, init, arr) {
   return helper(0, init);
 };
 
+var loadMusic = function(fn, part) {
+  // part should be one of 'train', 'test', 'valid'.
+  var data = JSON.parse(fs.read(fn))[part];
+  return map(function(seq) { return map(Vector, seq); }, data);
+};
+
 // PARAMETERS --------------------------------------------------------
 
-// Appendix C describes the size of the nets for each experiment.
+var fullSize = false;
 
-var zDim = 2;//100;
-var xDim = 1;//88;
-var transitionDim = 5;//100;
-var emissionDim = 5;//200;
-var rnnDim = 5;
+// Appendix C describes the size of the nets for each experiment.
+var xDim = 88;
+var zDim = fullSize ? 100 : 5;
+var transitionDim = fullSize ? 200 : 5;
+var emissionDim = fullSize ? 100 : 5;
+var rnnDim = fullSize ? 400 : 5; // or 600
+
+// I'm not sure about the dimension of the generative net. The above
+// is taken from the paper and I assume it's correct, though the code
+// make it look like twice this size is used.
+
+// Also see:
+// https://github.com/clinicalml/structuredinference/blob/7fd2e774a8aebe3a946a24a28c4f50d623f64014/parse_args_dkf.py
 
 // MODEL NETS --------------------------------------------------------
 
@@ -58,8 +78,22 @@ var hNet = stack([
   affine(transitionDim, 'hNetH1', modelParamL2(1))
 ]);
 
-// TODO: Init. weight of muNet to identity matrix.
+
 var muNet = affine(zDim, 'muNet', modelParamL2(1));
+
+// Since we don't have the option to init. the weight matrix to the
+// identity in webppl-nn, we instead parameterize this as a
+// optimizable matrix plus the identity. In the presence of
+// regularization, this isn't the same thing, as we regularize towards
+// the identity whereas when initializing to the identity we'll still
+// regularize towards 0.
+// var muNetI = idMatrix(zDim);
+// var muNet = compose(
+//   bias('muNetb', modelParamL2(1)),
+//   function(x) {
+//     var w = modelParamL2(1)({name: 'muNetw', dims: [zDim, zDim]});
+//     return T.dot(T.add(muNetI, w), x);
+//   });
 
 var sigmaNet = stack([
   softplus,
@@ -112,9 +146,13 @@ var xDist = function(z) {
 // sequence so we can use the corresponding RNN state generated
 // earlier. For now we track this using the global store.
 
+// NOTE: For lstm we double rnnDim so that hidden state and
+// memory/context both have length rnnDim. This is what i understand
+// the paper to describe.
+
 // TODO: Make this a parameter?
-var rnnInitialState = zeros([rnnDim, 1]);
-var rnn = gru(rnnDim, 'rnn');
+var rnnInitialState = zeros([rnnDim * 2, 1]);
+var rnn = lstm(rnnDim * 2, 'rnn');
 
 var init = function(sequence) {
   return function() {
@@ -164,7 +202,7 @@ var zGuide = function(zPrev) {
 // MODEL -------------------------------------------------------------
 
 var model = function(data) {
-  return mapData({data}, function(sequence) {
+  return mapData({data, batchSize: 20}, function(sequence) {
     guide(init(sequence));
     return reduceLeft(function(zPrev, obs) {
       var z = sample(zDist(zPrev), {guide: zGuide(zPrev)});
@@ -210,9 +248,15 @@ var posterior = usingGuide(obsFn);
 
 // OPTIMIZATION ------------------------------------------------------
 
-var obs = map(function(x) { return Vector([x]); }, [0,1,1]);
-Infer({method: 'forward', guide: 0, samples: 1, model() { model([obs]); }});
+// var obs = map(function(x) { return Vector([x]); }, [0,1,1]);
+// Infer({method: 'forward', guide: 0, samples: 1, model() { model([obs]); }});
 
-display('------------------------------');
+var data = loadMusic('examples/data/jsb-chorales.json', 'train');
 
-posterior(obs);
+Optimize({
+  model() { return model(data); },
+  steps: 1000,
+  optMethod: {adam: {stepSize: 0.0008}},
+  logProgress: true,
+  checkpointParams: true
+});
