@@ -73,7 +73,7 @@ var lrelu = ad.newUnaryFunction({
   OutputType: Tensor,
   name: 'lrelu',
   forward: function(t) {
-    return _relu(t);
+    return _lrelu(t);
   },
   backward: function(x) {
     for (var i = 0; i < x.x.length; i++) {
