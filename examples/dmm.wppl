@@ -4,7 +4,7 @@
 // Requires the version of webppl available as pull request #745.
 
 // Run with:
-// webppl examples/dmm.wppl --require .
+// webppl examples/dmm.wppl --require . --require webppl-fs
 
 // Delta between this and the model described in the paper:
 
