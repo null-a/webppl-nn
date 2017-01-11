@@ -16,6 +16,9 @@
 // 6. Step sizes are probably not comparable because ML people usually
 // divide mini-batch gradients by the batch size, where as we
 // effectively multiple them by len(data)/batchSize.
+// 7. We don't initialize the weight matrix of the linear network
+// (called muNet here) that forms part of the transition function in
+// quite the same way.
 
 // HELPERS -----------------------------------------------------------
 
@@ -79,7 +82,7 @@ var hNet = stack([
 ]);
 
 
-var muNet = affine(zDim, 'muNet', modelParamL2(1));
+//var muNet = affine(zDim, 'muNet', modelParamL2(1));
 
 // Since we don't have the option to init. the weight matrix to the
 // identity in webppl-nn, we instead parameterize this as a
@@ -87,13 +90,13 @@ var muNet = affine(zDim, 'muNet', modelParamL2(1));
 // regularization, this isn't the same thing, as we regularize towards
 // the identity whereas when initializing to the identity we'll still
 // regularize towards 0.
-// var muNetI = idMatrix(zDim);
-// var muNet = compose(
-//   bias('muNetb', modelParamL2(1)),
-//   function(x) {
-//     var w = modelParamL2(1)({name: 'muNetw', dims: [zDim, zDim]});
-//     return T.dot(T.add(muNetI, w), x);
-//   });
+var muNetI = idMatrix(zDim);
+var muNet = compose(
+  bias('muNetb', modelParamL2(1)),
+  function(x) {
+    var w = modelParamL2(1)({name: 'muNetw', dims: [zDim, zDim]});
+    return T.dot(T.add(muNetI, w), x);
+  });
 
 var sigmaNet = stack([
   softplus,
