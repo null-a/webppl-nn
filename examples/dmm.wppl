@@ -271,5 +271,12 @@ Optimize({
   checkpointParams: true
 });
 
-// var x = _.map(posteriorPredictive(100), _.method('x.toFlatArray'));
+
+// Sample from posterior predictive:
+
+// Load parameters. (Requires patched webppl.)
+// var optParams = deserializeParams(JSON.parse(fs.read('optParams.json')));
+// setParams(optParams);
+
+// var x = _.map(posteriorPredictive(200), _.method('x.toFlatArray'));
 // fs.write('sample.json', JSON.stringify(x));
