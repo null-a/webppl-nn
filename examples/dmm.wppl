@@ -1,7 +1,8 @@
 // Structured Inference Networks for Nonlinear State Space Models
 // https://arxiv.org/abs/1609.09869
 
-// Requires the version of webppl available as pull request #745.
+// Requires a recent dev version of webppl. (v0.9.6-170-g84fd4eb or
+// later.)
 
 // Run with:
 // webppl examples/dmm.wppl --require . --require webppl-fs
