@@ -132,6 +132,14 @@ var softplus = function(x) {
   return T.log(T.add(T.exp(x), 1));
 };
 
+var softmax = function(x) {
+  return T.softmax(x);
+};
+
+var squishToProbSimplex = function(x) {
+  return dists.squishToProbSimplex(x);
+};
+
 var sigmoid = function(x) {
   return T.sigmoid(x);
 };
