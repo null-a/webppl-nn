@@ -87,7 +87,13 @@ var parameterModel = function(getPrior) {
 // Note that since it's not possible to sample from an improper prior,
 // that fact that the result of sampling isn't cached (as discused
 // above) is not a problem.
-// var modelParam = paramModel(constF(ImproperUniform()));
+
+// (Though without caching, we'll unnecessarily create lots of
+// unnecessary AD nodes. I saw this cause "Maximum call stack size
+// exceeded" when optimizing a DMM, so adding caching would be a good
+// idea.)
+
+// var modelParam = parameterModel(constF(ImproperUniform()));
 
 // The function returned by e.g. modelParamL2(0.1) is analogous the
 // WebPPL's `modelParam`.
@@ -130,6 +136,14 @@ var oneHot = function(index, length) {
 
 var softplus = function(x) {
   return T.log(T.add(T.exp(x), 1));
+};
+
+var softmax = function(x) {
+  return T.softmax(x);
+};
+
+var squishToProbSimplex = function(x) {
+  return dists.squishToProbSimplex(x);
 };
 
 var sigmoid = function(x) {

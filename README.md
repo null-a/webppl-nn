@@ -140,9 +140,34 @@ maps a state vector and an input vector to a new state vector.
 #### `tanh(x)`
 #### `relu(x)`
 #### `lrelu(x)`
-#### `softplus(x)`
 
 Leaky rectified linear unit.
+
+#### `softplus(x)`
+
+#### `softmax(x)`
+#### `squishToProbSimplex(x)`
+
+Maps vectors of length `n` to probability vectors of length `n + 1`.
+
+In contrast to the `softmax` function, a network with
+`squishToProbSimplex` at the output and no regularization is not over
+parameterized. However, with regularization, a network with `softmax`
+at the output will not be over parameterized either.
+
+<!--
+
+Using squishToProbSimplex to with a prior on the parameters centered
+at zero seems a bit fishy. For example, these two output the same
+vector only with the elements permuted:
+
+squishToProbSimplex(vec([-1,-1,-1]))
+squishToProbSimplex(vec([1,0,0]))
+
+... yet under a Gaussian prior they aren't equally likely. Something
+similar applies when using regularization.
+
+-->
 
 ### Model Parameters
 
