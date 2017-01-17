@@ -35,6 +35,15 @@ var usingGuide = function(fn) {
 // Model Parameters
 // ==================================================
 
+var gaussianPriorForParam = function(sigma) {
+  return function(paramOpts) {
+    var dims = paramOpts.dims;
+    return dims ?
+        TensorGaussian({mu: 0, sigma, dims}) :
+        Gaussian({mu: 0, sigma});
+  };
+};
+
 // By model parameter I mean a guide parameter that is included in a
 // model by adding a prior distribution that is guided by a delta
 // distribution, parameterized by the guide parameter. When optimizing
@@ -66,7 +75,7 @@ var usingGuide = function(fn) {
 
 // This helper implements the pattern just described:
 
-var __parameterModel = mem1(function(name, paramOpts, getPrior) {
+var _parameterModel = mem1(function(name, paramOpts, getPrior) {
   // getPrior is a function that returns a distribution instance. It
   // is passed the options that are passed to `param` to make it
   // possible to have the dimension of the prior match that of the
@@ -76,11 +85,14 @@ var __parameterModel = mem1(function(name, paramOpts, getPrior) {
   }});
 });
 
+// We wrap __parameterModel to give us a function more amenable to
+// composition.
+
 var parameterModel = function(getPrior) {
   return function(paramOpts) {
     // TODO: Handle address based names.
     assert.ok(paramOpts.name, 'A name must be given.');
-    return __parameterModel(paramOpts.name, paramOpts, getPrior);
+    return _parameterModel(paramOpts.name, paramOpts, getPrior);
   };
 };
 
@@ -97,14 +109,8 @@ var parameterModel = function(getPrior) {
 
 // The function returned by e.g. modelParamL2(0.1) is analogous the
 // WebPPL's `modelParam`.
-var modelParamL2 = function(sigma) {
-  return parameterModel(function(paramOpts) {
-    var dims = paramOpts.dims;
-    return dims ?
-        TensorGaussian({mu: 0, sigma, dims}) :
-        Gaussian({mu: 0, sigma});
-  });
-};
+
+var modelParamL2 = compose(parameterModel, gaussianPriorForParam);
 
 // TODO: One problem here is that one would expect `modelParam` to
 // throw an error in the guide because it calls `sample`. However, if
@@ -112,6 +118,53 @@ var modelParamL2 = function(sigma) {
 // `modelParam` and successfully fetch the value. This is confusing.
 // Perhaps `modelParam` should check whether its called from the
 // guide, and error out if so.
+
+// ==================================================
+// Weight decay
+// ==================================================
+
+// This is the core logic of weight decay. (This is the analog of the
+// __parameterModel method.)
+var _regularizedParam = mem1(function(name, paramOpts, getPrior) {
+  var val = param(paramOpts);
+  var prior = getPrior(paramOpts);
+  extendObjective(-prior.score(val));
+  return val;
+});
+
+var regularizedParam = function(getPrior) {
+  return function(paramOpts) {
+    assert.ok(paramOpts.name, 'A name must be given.');
+    return _regularizedParam(paramOpts.name, paramOpts, getPrior);
+  };
+};
+
+//var regParamL1 = compose(regularizedParam, laplacePriorForParam);
+var regParamL2 = compose(regularizedParam, gaussianPriorForParam);
+
+// We typically want a prior + delta guide for model parameters, and
+// weight decay for guide parameters. This idea is captured by this
+// convenience helper.
+
+// A flag indicates which strategy to use for *model* parameters
+// during *optimization*, as either is applicable. Both strategies
+// give the same optimization problem, though note that the value of
+// the objective reported during optimization does not include weight
+// decay terms. This corresponds to the approach typically taken in ML
+// and can make it easy to compare ELBO progress etc.
+
+var _param = function(getPrior, useWeightDecay) {
+  return function(paramOpts) {
+    var f = inGuide() || (inOptimize() && useWeightDecay) ?
+          regularizedParam :
+          parameterModel;
+    return f(getPrior)(paramOpts);
+  };
+};
+
+var paramL2 = function(sigma, useReg) {
+  return _param(gaussianPriorForParam(sigma), useReg);
+};
 
 // ==================================================
 // Neural Networks
