@@ -120,6 +120,53 @@ var modelParamL2 = compose(parameterModel, gaussianPriorForParam);
 // guide, and error out if so.
 
 // ==================================================
+// Weight decay
+// ==================================================
+
+// This is the core logic of weight decay. (This is the analog of the
+// __parameterModel method.)
+var _regularizedParam = mem1(function(name, paramOpts, getPrior) {
+  var val = param(paramOpts);
+  var prior = getPrior(paramOpts);
+  extendObjective(-prior.score(val));
+  return val;
+});
+
+var regularizedParam = function(getPrior) {
+  return function(paramOpts) {
+    assert.ok(paramOpts.name, 'A name must be given.');
+    return _regularizedParam(paramOpts.name, paramOpts, getPrior);
+  };
+};
+
+//var regParamL1 = compose(regularizedParam, laplacePriorForParam);
+var regParamL2 = compose(regularizedParam, gaussianPriorForParam);
+
+// We typically want a prior + delta guide for model parameters, and
+// weight decay for guide parameters. This idea is captured by this
+// convenience helper.
+
+// A flag indicates which strategy to use for *model* parameters
+// during *optimization*, as either is applicable. Both strategies
+// give the same optimization problem, though note that the value of
+// the objective reported during optimization does not include weight
+// decay terms. This corresponds to the approach typically taken in ML
+// and can make it easy to compare ELBO progress etc.
+
+var _param = function(getPrior, useWeightDecay) {
+  return function(paramOpts) {
+    var f = inGuide() || (inOptimize() && useWeightDecay) ?
+          regularizedParam :
+          parameterModel;
+    return f(getPrior)(paramOpts);
+  };
+};
+
+var paramL2 = function(sigma, useReg) {
+  return _param(gaussianPriorForParam(sigma), useReg);
+};
+
+// ==================================================
 // Neural Networks
 // ==================================================
 

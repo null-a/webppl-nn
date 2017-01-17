@@ -8,7 +8,10 @@
       "src/nn.wppl",
       "src/normalization.wppl",
       "src/recurrent.wppl"
-     ]
+    ],
+    "headers": [
+      "src/header.js"
+    ]
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

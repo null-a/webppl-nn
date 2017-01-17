@@ -1,0 +1,50 @@
+var opt = function(model) {
+  Optimize({
+    model,
+    optMethod: {adam: {stepSize: 0.1}},
+    steps: 1000,
+    verbose: false
+  });
+};
+
+// Model parameters.
+
+opt(function() {
+  var mu = modelParam({name: 'mu-ml'});
+  observe(Gaussian({mu, sigma: 1}), 4);
+});
+
+opt(function() {
+  var mu = paramL2(1)({name: 'mu-map'});
+  observe(Gaussian({mu, sigma: 1}), 4);
+});
+
+opt(function() {
+  var mu = paramL2(1, true)({name: 'mu-weight-decay'});
+  observe(Gaussian({mu, sigma: 1}), 4);
+});
+
+display('Model --------------------');
+display('Improper prior + delta guide: ' + param({name: 'mu-ml'}));
+display('Gaussian prior + delta guide: ' + param({name: 'mu-map'}));
+display('Weight decay: ' + param({name: 'mu-weight-decay'}));
+
+// Guide parameters.
+
+opt(function() {
+  sample(Gaussian({mu: 4, sigma: 1}), {guide() {
+    var mu = param({name: 'guide-mu'});
+    return Gaussian({mu, sigma: 1});
+  }});
+});
+
+opt(function() {
+  sample(Gaussian({mu: 4, sigma: 1}), {guide() {
+    var mu = paramL2(1)({name: 'guide-mu-weight-decay'});
+    return Gaussian({mu, sigma: 1});
+  }});
+});
+
+display('Guide --------------------');
+display('No weight decay: ' + param({name: 'guide-mu'}));
+display('Weight decay: ' + param({name: 'guide-mu-weight-decay'}));
