@@ -61,8 +61,8 @@ var rnnDim = fullSize ? 400 : 5; // or 600
 // is taken from the paper and I assume it's correct, though the code
 // make it look like twice this size is used.
 
-// Model parameters have Gaussian prior with this s.d.
-var mParam = undefined;//modelParamL2(100);
+// All net parameters use weight decay.
+var nnparam = paramL2(Math.sqrt(10), true);
 
 // Also see:
 // https://github.com/clinicalml/structuredinference/blob/7fd2e774a8aebe3a946a24a28c4f50d623f64014/parse_args_dkf.py
@@ -75,37 +75,29 @@ var mParam = undefined;//modelParamL2(100);
 // "gated transition function"
 var gNet = stack([
   sigmoid,
-  affine(zDim, 'gNetH2', mParam),
+  affine(zDim, 'gNetH2', nnparam),
   relu,
-  affine(transitionDim, 'gNetH1', mParam)
+  affine(transitionDim, 'gNetH1', nnparam)
 ]);
 
 var hNet = stack([
-  affine(zDim, 'hNetH2', mParam),
+  affine(zDim, 'hNetH2', nnparam),
   relu,
-  affine(transitionDim, 'hNetH1', mParam)
+  affine(transitionDim, 'hNetH1', nnparam)
 ]);
 
-
-//var muNet = affine(zDim, 'muNet', mParam);
-
-// Since we don't have the option to init. the weight matrix to the
-// identity in webppl-nn, we instead parameterize this as a
-// optimizable matrix plus the identity. In the presence of
-// regularization, this isn't the same thing, as we regularize towards
-// the identity whereas when initializing to the identity we'll still
-// regularize towards 0.
-var muNetI = idMatrix(zDim);
 var muNet = compose(
-  bias('muNetb', mParam),
+  bias('muNetb', nnparam),
   function(x) {
-    var w = param({name: 'muNetw', dims: [zDim, zDim]});
-    return T.dot(T.add(muNetI, w), x);
+    // Initialize to the identity matrix.
+    // (Requires a patched version of webppl.)
+    var w = nnparam({name: 'muNetw', dims: [zDim, zDim], id: true});
+    return T.dot(w, x);
   });
 
 var sigmaNet = stack([
   softplus,
-  affine(zDim, 'sigmaNetHid', mParam),
+  affine(zDim, 'sigmaNetHid', nnparam),
   relu
 ]);
 
@@ -127,11 +119,11 @@ var zDist = function(zPrev) {
 // "emission function"
 var emissionNet = stack([
   sigmoid,
-  affine(xDim, 'emissionNetH3', mParam),
+  affine(xDim, 'emissionNetH3', nnparam),
   relu,
-  affine(emissionDim, 'emissionNetH2', mParam),
+  affine(emissionDim, 'emissionNetH2', nnparam),
   relu,
-  affine(emissionDim, 'emissionNetH1', mParam)
+  affine(emissionDim, 'emissionNetH1', nnparam)
 ]);
 
 var xDist = function(z) {
@@ -160,7 +152,7 @@ var xDist = function(z) {
 
 // TODO: Make this a parameter?
 var rnnInitialState = zeros([rnnDim * 2, 1]);
-var rnn = lstm(rnnDim * 2, 'rnn');
+var rnn = lstm(rnnDim * 2, 'rnn', nnparam);
 
 var init = function(sequence) {
   return function() {
@@ -187,9 +179,9 @@ var init = function(sequence) {
 
 var z0 = zeros([zDim, 1]);
 
-var embedNet = compose(tanh, affine(rnnDim, 'embedNet'));
-var muParamNet = affine(zDim, 'muParamNet');
-var sigmaParamNet = compose(softplus, affine(zDim, 'sigmaParamNet'));
+var embedNet = compose(tanh, affine(rnnDim, 'embedNet', nnparam));
+var muParamNet = affine(zDim, 'muParamNet', nnparam);
+var sigmaParamNet = compose(softplus, affine(zDim, 'sigmaParamNet', nnparam));
 
 // The guide at each time step is conditioned on the previous hidden
 // state (which we pass in here since we it's already to hand in the
@@ -265,7 +257,7 @@ var data = loadMusic('examples/data/music/JSB-Chorales.json', 'train');
 
 Optimize({
   model() { return model(data); },
-  steps: 2000,
+  steps: 3000,
   optMethod: {adam: {stepSize: 0.0008}},
   showGradNorm: true,
   logProgress: true,
