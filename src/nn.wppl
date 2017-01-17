@@ -35,6 +35,15 @@ var usingGuide = function(fn) {
 // Model Parameters
 // ==================================================
 
+var gaussianPriorForParam = function(sigma) {
+  return function(paramOpts) {
+    var dims = paramOpts.dims;
+    return dims ?
+        TensorGaussian({mu: 0, sigma, dims}) :
+        Gaussian({mu: 0, sigma});
+  };
+};
+
 // By model parameter I mean a guide parameter that is included in a
 // model by adding a prior distribution that is guided by a delta
 // distribution, parameterized by the guide parameter. When optimizing
@@ -66,7 +75,7 @@ var usingGuide = function(fn) {
 
 // This helper implements the pattern just described:
 
-var __parameterModel = mem1(function(name, paramOpts, getPrior) {
+var _parameterModel = mem1(function(name, paramOpts, getPrior) {
   // getPrior is a function that returns a distribution instance. It
   // is passed the options that are passed to `param` to make it
   // possible to have the dimension of the prior match that of the
@@ -76,11 +85,14 @@ var __parameterModel = mem1(function(name, paramOpts, getPrior) {
   }});
 });
 
+// We wrap __parameterModel to give us a function more amenable to
+// composition.
+
 var parameterModel = function(getPrior) {
   return function(paramOpts) {
     // TODO: Handle address based names.
     assert.ok(paramOpts.name, 'A name must be given.');
-    return __parameterModel(paramOpts.name, paramOpts, getPrior);
+    return _parameterModel(paramOpts.name, paramOpts, getPrior);
   };
 };
 
@@ -97,14 +109,8 @@ var parameterModel = function(getPrior) {
 
 // The function returned by e.g. modelParamL2(0.1) is analogous the
 // WebPPL's `modelParam`.
-var modelParamL2 = function(sigma) {
-  return parameterModel(function(paramOpts) {
-    var dims = paramOpts.dims;
-    return dims ?
-        TensorGaussian({mu: 0, sigma, dims}) :
-        Gaussian({mu: 0, sigma});
-  });
-};
+
+var modelParamL2 = compose(parameterModel, gaussianPriorForParam);
 
 // TODO: One problem here is that one would expect `modelParam` to
 // throw an error in the guide because it calls `sample`. However, if
