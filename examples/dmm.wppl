@@ -11,15 +11,16 @@
 
 // 1. We don't compute any KL terms analytically.
 // 2. We parameterize sigma with our nets, rather than sigma^2.
-// 3. Regularization. Different strength in model? None for guide.
+// 3. [Fixed] Regularization. Different strength in model? None for
+// guide.
 // 4. No dropout in RNN. (?)
 // 5. Weight init. e.g. ortho for LSTM, what else?
-// 6. Step sizes are probably not comparable because ML people usually
-// divide mini-batch gradients by the batch size, where as we
+// 6. [Fixed] Step sizes are probably not comparable because ML people
+// usually divide mini-batch gradients by the batch size, where as we
 // effectively multiple them by len(data)/batchSize.
-// 7. We don't initialize the weight matrix of the linear network
-// (called muNet here) that forms part of the transition function in
-// quite the same way.
+// 7. [Fixed] We don't initialize the weight matrix of the linear
+// network (called muNet here) that forms part of the transition
+// function in quite the same way.
 // 8. No KL term annealing yet.
 
 // HELPERS -----------------------------------------------------------
@@ -55,7 +56,7 @@ var xDim = 88;
 var zDim = fullSize ? 100 : 5;
 var transitionDim = fullSize ? 200 : 5;
 var emissionDim = fullSize ? 100 : 5;
-var rnnDim = fullSize ? 400 : 5; // or 600
+var rnnDim = fullSize ? 600 : 5;
 
 // I'm not sure about the dimension of the generative net. The above
 // is taken from the paper and I assume it's correct, though the code
@@ -257,11 +258,12 @@ var data = loadMusic('examples/data/music/JSB-Chorales.json', 'train');
 
 Optimize({
   model() { return model(data); },
-  steps: 3000,
+  steps: 25000,
   optMethod: {adam: {stepSize: 0.0008}},
   showGradNorm: true,
   logProgress: true,
-  checkpointParams: true
+  checkpointParams: true,
+  clip: 1
 });
 
 
