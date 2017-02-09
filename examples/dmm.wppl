@@ -63,7 +63,8 @@ var rnnDim = fullSize ? 600 : 5;
 // make it look like twice this size is used.
 
 // All net parameters use weight decay.
-var nnparam = paramL2(Math.sqrt(10), true);
+//var nnparam = paramL2(Math.sqrt(10), true);
+var nnparam = param;
 
 // Also see:
 // https://github.com/clinicalml/structuredinference/blob/7fd2e774a8aebe3a946a24a28c4f50d623f64014/parse_args_dkf.py
@@ -92,7 +93,8 @@ var muNet = compose(
   function(x) {
     // Initialize to the identity matrix.
     // (Requires a patched version of webppl.)
-    var w = nnparam({name: 'muNetw', dims: [zDim, zDim], id: true});
+    //var w = nnparam({name: 'muNetw', dims: [zDim, zDim], id: true});
+    var w = nnparam({name: 'muNetw', dims: [zDim, zDim]});
     return T.dot(w, x);
   });
 
