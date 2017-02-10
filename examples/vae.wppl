@@ -1,7 +1,7 @@
 // Variational Autoencoder
 // https://arxiv.org/abs/1312.6114
 
-var zDim = 2;
+var zDim = 10;
 var hDecodeDim = 500;
 var hEncodeDim = 500;
 var xDim = 784;
@@ -56,3 +56,6 @@ Optimize({
   estimator: {ELBO: {samples: 1}},
   optMethod: {adam: {stepSize: 0.001}}
 });
+
+// Save parameters for use with image synthesis demo.
+fs.write('vae-params-zdim-10-steps-500.json', serializeParams(getParams()));
