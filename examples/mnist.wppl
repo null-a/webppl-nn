@@ -30,6 +30,21 @@ var makeClassifierNet = function(nnparam) {
   ]);
 };
 
+// Similar to makeClassifierNet but written without webppl-nn. (Only
+// missing weight initialization.)
+var makeClassifierNet2 = function(nnparam) {
+  return function(x) {
+    var w0 = nnparam({name: 'w0', dims: [100, 28*28]});
+    var b0 = nnparam({name: 'b0', dims: [100, 1]});
+    var w1 = nnparam({name: 'w1', dims: [10, 100]});
+    var b1 = nnparam({name: 'b1', dims: [10]});
+    var a0 = T.add(T.dot(w0, x), b0);
+    var h0 = T.tanh(a0);
+    var a1 = T.add(T.dot(w1, h0), b1);
+    return T.softmax(a1);
+  };
+};
+
 var classifierNet = makeClassifierNet(param);
 
 // Hack to create a version of the classifier net with fixed params.
