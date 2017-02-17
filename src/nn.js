@@ -105,11 +105,24 @@ function oneHot(index, length) {
   return out;
 }
 
+var namesSeen = {};
+function checkNetName(name) {
+  if (!name) {
+    throw new Error('A network must be given a name.');
+  }
+  if (namesSeen.hasOwnProperty(name)) {
+    var msg = 'Warning: The name "' + name + '" is used by multiple networks.';
+    util.warn(msg, true);
+  };
+  namesSeen[name] = true;
+};
+
 module.exports = {
   sumreduce0: sumreduce0,
   _sumreduce0: _sumreduce0,
   relu: relu,
   lrelu: lrelu,
   idMatrix: idMatrix,
-  oneHot: oneHot
+  oneHot: oneHot,
+  checkNetName: checkNetName
 };

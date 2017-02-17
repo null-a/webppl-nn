@@ -109,9 +109,6 @@ be aware of.
   share the same dimension and (when specified) the same parameter
   model. Failing to do this will probably lead to subtle bugs.
 
-* All networks must be named. Care has to be taken to give nets unique
-  names when sharing is not required.
-
 ## Reference
 
 ### Networks

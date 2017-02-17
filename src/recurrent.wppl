@@ -1,7 +1,7 @@
 // Traditional RNN
 
 var rnn = function(name, dim, maybeArgs) {
-  assert.ok(name, 'A network must be given a name');
+  checkNetName(name);
   assert.ok(Number.isInteger(dim), 'dim should be an integer');
   var args = maybeArgs || {};
   var ctor = args.ctor || affine;
@@ -24,7 +24,7 @@ var rnn = function(name, dim, maybeArgs) {
 // https://arxiv.org/abs/1412.3555
 
 var gru = function(name, dim, maybeArgs) {
-  assert.ok(name, 'A network must be given a name');
+  checkNetName(name);
   assert.ok(Number.isInteger(dim), 'dim should be an integer');
   var args = maybeArgs || {};
   var ctor = args.ctor || affine;
@@ -54,7 +54,7 @@ var gru = function(name, dim, maybeArgs) {
 // https://arxiv.org/abs/1308.0850
 
 var lstm = function(name, dim, maybeArgs) {
-  assert.ok(name, 'A network must be given a name');
+  checkNetName(name);
   // dim is the total dimension of the state. i.e. memory + hidden
   // state vectors. Setting things up this way makes it easy to swap
   // between gru and lstm.

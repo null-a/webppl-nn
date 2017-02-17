@@ -31,6 +31,10 @@ var usingGuide = function(fn) {
   };
 };
 
+var checkNetName = function(name) {
+  return webpplNn.checkNetName(name);
+};
+
 // ==================================================
 // Model Parameters
 // ==================================================
@@ -215,7 +219,7 @@ var stack = function(arr) {
 // non-linearities.
 
 var linear = function(name, nout, maybeArgs) {
-  assert.ok(name, 'A network must be given a name');
+  checkNetName(name);
   assert.ok(Number.isInteger(nout), 'nout should be an integer.');
   var args = maybeArgs || {};
   var nnparam = args.param || param;
@@ -231,7 +235,7 @@ var linear = function(name, nout, maybeArgs) {
 // Is that important? What would it look like here?
 
 var bias = function(name, maybeArgs) {
-  assert.ok(name, 'A network must be given a name');
+  checkNetName(name);
   var args = maybeArgs || {};
   var nnparam = args.param || param;
   var initb = _.has(args, 'initb') ? args.initb : 0;
@@ -244,6 +248,7 @@ var bias = function(name, maybeArgs) {
 };
 
 var affine = function(name, nout, maybeArgs) {
+  checkNetName(name);
   return compose(
     bias(name + 'b', maybeArgs),
     linear(name + 'w', nout, maybeArgs));

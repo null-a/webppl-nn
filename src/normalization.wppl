@@ -5,7 +5,7 @@
 // https://arxiv.org/abs/1607.06450
 
 var layerNorm = function(name, maybeArgs) {
-  assert.ok(name, 'A network must be given a name');
+  checkNetName(name);
   var args = maybeArgs || {};
   var nnparam = args.param || param;
   return function(a) {
@@ -29,7 +29,7 @@ var layerNorm = function(name, maybeArgs) {
 // constructors to gru/lstm etc.
 
 var affineWithLayerNorm = function(name, nout, maybeArgs) {
-  assert.ok(name, 'A network must be given a name');
+  checkNetName(name);
   return stack([
     bias(name + 'b', maybeArgs),
     layerNorm(name + 'ln', maybeArgs),
@@ -60,7 +60,7 @@ var affineWithLayerNorm = function(name, nout, maybeArgs) {
 // example often failed to work well. I don't know why.
 
 var linearWeightNorm = function(name, nout, maybeArgs) {
-  assert.ok(name, 'A network must be given a name');
+  checkNetName(name);
   assert.ok(Number.isInteger(nout), 'nout should be an integer');
   var args = maybeArgs || {};
   var nnparam = args.param || param;
