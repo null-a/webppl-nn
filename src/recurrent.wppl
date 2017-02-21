@@ -1,11 +1,12 @@
 // Traditional RNN
 
-var rnn = function(dim, name, maybeParamModel, maybeMakeNet, maybeNonLinearity) {
-  assert.ok(Number.isInteger(dim), 'dim should be an integer');
+var rnn = function(name, dim, maybeArgs) {
   assert.ok(name, 'A network must be given a name');
-  var makeNet = maybeMakeNet || affine;
-  var nonLin = maybeNonLinearity || tanh;
-  var net = compose(compose(nonLin, makeNet(dim, name, maybeParamModel)), concat);
+  assert.ok(Number.isInteger(dim), 'dim should be an integer');
+  var args = maybeArgs || {};
+  var ctor = args.ctor || affine;
+  var output = args.output || tanh;
+  var net = stack([output, ctor(name, dim, maybeArgs), concat]);
   return function(hprev, x) {
     assert.ok(dims(hprev)[0] === dim,
               'Previous hidden vector has unexpected dimension');
@@ -22,14 +23,14 @@ var rnn = function(dim, name, maybeParamModel, maybeMakeNet, maybeNonLinearity) 
 
 // https://arxiv.org/abs/1412.3555
 
-var gru = function(dim, name, maybeParamModel, maybeMakeNet) {
-  assert.ok(Number.isInteger(dim), 'dim should be an integer');
+var gru = function(name, dim, maybeArgs) {
   assert.ok(name, 'A network must be given a name');
-  var nnparam = maybeParamModel || param;
-  var makeNet = maybeMakeNet || affine;
-  var update = compose(sigmoid, makeNet(dim, name + 'update', nnparam));
-  var reset = compose(sigmoid, makeNet(dim, name + 'reset', nnparam));
-  var candidate = compose(tanh, makeNet(dim, name + 'candidate', nnparam));
+  assert.ok(Number.isInteger(dim), 'dim should be an integer');
+  var args = maybeArgs || {};
+  var ctor = args.ctor || affine;
+  var update = compose(sigmoid, ctor(name + 'update', dim, maybeArgs));
+  var reset = compose(sigmoid, ctor(name + 'reset', dim, maybeArgs));
+  var candidate = compose(tanh, ctor(name + 'candidate', dim, maybeArgs));
   return function(hprev, x) {
     assert.ok(dims(hprev)[0] === dim,
               'Previous hidden vector has unexpected dimension');
@@ -52,28 +53,25 @@ var gru = function(dim, name, maybeParamModel, maybeMakeNet) {
 
 // https://arxiv.org/abs/1308.0850
 
-var lstm = function(dim, name, maybeParamModel) {
+var lstm = function(name, dim, maybeArgs) {
+  assert.ok(name, 'A network must be given a name');
   // dim is the total dimension of the state. i.e. memory + hidden
   // state vectors. Setting things up this way makes it easy to swap
   // between gru and lstm.
   assert.ok(Number.isInteger(dim), 'dim should be an integer');
   assert.ok(dim % 2 === 0, 'dim should be an even integer');
-  assert.ok(name, 'A network must be given a name');
   var hdim = dim / 2;
-  var nnparam = maybeParamModel || param;
-  var forget = stack([
+  // It's said that initializing the biases of the forget gate to a
+  // value greater than 0 is a good idea. This is so that the output
+  // is close to one at the start of optimization, ensuring
+  // information is passed along. This is mentioned in e.g. "An
+  // Empirical Exploration of Recurrent Network Architectures".
+  var forget = compose(
     sigmoid,
-    // It's said that initializing the biases of the forget gate to
-    // a value greater than 0 is a good idea. This is so that the output
-    // is close to one at the start of optimization, ensuring information
-    // is passed along. This is mentioned in e.g. "An Empirical
-    // Exploration of Recurrent Network Architectures".
-    bias(name + 'forgetb', nnparam, 1),
-    linear(hdim, name + 'forgetw', nnparam)
-  ]);
-  var input = compose(sigmoid, affine(hdim, name + 'input', nnparam));
-  var output = compose(sigmoid, affine(hdim, name + 'output', nnparam));
-  var candidate = compose(tanh, affine(hdim, name + 'candidate', nnparam));
+    affine(name + 'forget', hdim, _.assign({}, maybeArgs, {initb: 1})));
+  var input = compose(sigmoid, affine(name + 'input', hdim, maybeArgs));
+  var output = compose(sigmoid, affine(name + 'output', hdim, maybeArgs));
+  var candidate = compose(tanh, affine(name + 'candidate', hdim, maybeArgs));
   return function(prev, x) {
     // For compatibility with the interface of e.g. gru we combine the
     // memory and hidden state into a single vector, prev.

@@ -4,9 +4,10 @@
 
 // https://arxiv.org/abs/1607.06450
 
-var layerNorm = function(name, maybeParamModel) {
-  var nnparam = maybeParamModel || param;
+var layerNorm = function(name, maybeArgs) {
   assert.ok(name, 'A network must be given a name');
+  var args = maybeArgs || {};
+  var nnparam = args.param || param;
   return function(a) {
     var nout = dims(a)[0];
     // Gain parameters.
@@ -27,13 +28,12 @@ var layerNorm = function(name, maybeParamModel) {
 // takes a dummy nout param.) This could be useful for passing novel
 // constructors to gru/lstm etc.
 
-var affineWithLayerNorm = function(nout, name, maybeModelParam) {
-  var nnparam = maybeModelParam || param;
+var affineWithLayerNorm = function(name, nout, maybeArgs) {
   assert.ok(name, 'A network must be given a name');
   return stack([
-    bias(name + 'b', nnparam),
-    layerNorm(name + 'ln', nnparam),
-    linear(nout, name + 'w', nnparam)
+    bias(name + 'b', maybeArgs),
+    layerNorm(name + 'ln', maybeArgs),
+    linear(name + 'w', nout, maybeArgs)
   ]);
 };
 
@@ -59,10 +59,11 @@ var affineWithLayerNorm = function(nout, name, maybeModelParam) {
 // Note: When I tried parameterizing g in log space the ml-classifier
 // example often failed to work well. I don't know why.
 
-var linearWeightNorm = function(nout, name, maybeParamModel) {
-  var nnparam = maybeParamModel || param;
-  assert.ok(Number.isInteger(nout), 'nout should be an integer');
+var linearWeightNorm = function(name, nout, maybeArgs) {
   assert.ok(name, 'A network must be given a name');
+  assert.ok(Number.isInteger(nout), 'nout should be an integer');
+  var args = maybeArgs || {};
+  var nnparam = args.param || param;
   return function(x) {
     var nin = dims(x)[0];
     var sigma = Math.sqrt(2 / (nin + nout));

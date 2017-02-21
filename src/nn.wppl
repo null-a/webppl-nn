@@ -214,10 +214,11 @@ var stack = function(arr) {
 // TODO: This initialization scheme may not be suitable for asymmetric
 // non-linearities.
 
-var linear = function(nout, name, maybeParamModel) {
-  var nnparam = maybeParamModel || param;
-  assert.ok(Number.isInteger(nout), 'nout should be an integer.');
+var linear = function(name, nout, maybeArgs) {
   assert.ok(name, 'A network must be given a name');
+  assert.ok(Number.isInteger(nout), 'nout should be an integer.');
+  var args = maybeArgs || {};
+  var nnparam = args.param || param;
   return function(x) {
     var nin = dims(x)[0];
     var sigma = Math.sqrt(2 / (nin + nout));
@@ -229,21 +230,21 @@ var linear = function(nout, name, maybeParamModel) {
 // TODO: It seems pretty common to not apply regularization to biases.
 // Is that important? What would it look like here?
 
-var bias = function(name, maybeParamModel, maybeInit) {
+var bias = function(name, maybeArgs) {
   assert.ok(name, 'A network must be given a name');
-  assert.ok(maybeInit === undefined || _.isNumber(maybeInit),
-            'Initial bias should be a number');
-  var nnparam = maybeParamModel || param;
-  var init = maybeInit !== undefined ? maybeInit : 0;
+  var args = maybeArgs || {};
+  var nnparam = args.param || param;
+  var initb = _.has(args, 'initb') ? args.initb : 0;
+  assert.ok(_.isNumber(initb), 'Initial bias should be a number.');
   return function(x) {
     var nout = dims(x)[0];
-    var b = nnparam({name, dims: [nout, 1], mu: init, sigma: 0});
+    var b = nnparam({name, dims: [nout, 1], mu: initb, sigma: 0});
     return T.add(x, b);
   };
 };
 
-var affine = function(nout, name, maybeParamModel) {
+var affine = function(name, nout, maybeArgs) {
   return compose(
-    bias(name + 'b', maybeParamModel),
-    linear(nout, name + 'w', maybeParamModel));
+    bias(name + 'b', maybeArgs),
+    linear(name + 'w', nout, maybeArgs));
 };

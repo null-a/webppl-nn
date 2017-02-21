@@ -59,11 +59,11 @@ In WebPPL we can represent "neural" networks as parameterized
 functions, typically from vectors to vectors. (By building on
 [adnn](https://github.com/dritchie/adnn).) This package provides a
 number of helper functions that capture common patterns in the shape
-of these functions. These helpers typically take an output dimension
-and name as arguments.
+of these functions. These helpers typically take a name and an output
+dimension as arguments.
 
 ```js
-var net = affine(5, 'net');
+var net = affine('net', 5);
 var out = net(ones([3, 1])); // dims(out) == [5, 1]
 ```
 
@@ -73,9 +73,9 @@ helper makes the common pattern of stacking "layers" more readable.
 ```js
 var mlp = stack([
   sigmoid,
-  affine(1, 'layer2'),
+  affine('layer2', 1),
   tanh,
-  affine(5, 'layer1')
+  affine('layer1', 5)
 ]);
 ```
 
@@ -87,8 +87,8 @@ the model parameter helpers described above can be passed to the
 network constructor.
 
 ```js
-var guideNet = linear(10, 'net1');
-var modelNet = linear(10, 'net1', modelParamL2(1));
+var guideNet = linear('net1', 10);
+var modelNet = linear('net1', 10, {param: modelParamL2(1)});
 ```
 
 ## Examples
@@ -116,20 +116,20 @@ be aware of.
 
 ### Networks
 
-#### `linear(nout, name[, paramModel])`
-#### `affine(nout, name[, paramModel])`
+#### `linear(name, nout[, {param}])`
+#### `affine(name, nout[, {param, initb}])`
 
 These return a parameterized function of a single argument. This
 function maps a vector to a vector of length `nout`.
 
-#### `bias(name[, paramModel, initialBias])`
+#### `bias(name[, {param, initb}])`
 
 Returns a parameterized function of a single argument. This function
 maps vectors of length `n` to vectors of length `n`.
 
-#### `rnn(nout, name[, paramModel, netConstructor, nonLinearity])`
-#### `gru(nout, name[, paramModel, netConstructor])`
-#### `lstm(nout, name[, paramModel])`
+#### `rnn(name, nout[, {param, ctor, output}])`
+#### `gru(name, nout[, {param, ctor}])`
+#### `lstm(name, nout[, {param}])`
 
 These return parameterized function of two arguments. This function
 maps a state vector and an input vector to a new state vector.

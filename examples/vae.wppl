@@ -19,9 +19,9 @@ var images = map(Vector, JSON.parse(fs.read('examples/data/mnist_images.json')))
 // Recognition network.
 // Maps from an input image to the parameters of the guide
 // distribution.
-var encH = compose(tanh, affine(hEncodeDim, 'encH'));
-var encM = affine(zDim, 'encM');
-var encS = affine(zDim, 'encS');
+var encH = compose(tanh, affine('encH', hEncodeDim));
+var encM = affine('encM', zDim);
+var encS = affine('encS', zDim);
 
 var encode = function(x) {
   var h = encH(x);
@@ -34,9 +34,9 @@ var encode = function(x) {
 // Maps from the latent space to pixels.
 var decode = stack([
   sigmoid,
-  affine(xDim, 'dec1', modelParam),
+  affine('dec1', xDim, {param: modelParam}),
   tanh,
-  affine(hDecodeDim, 'dec0', modelParam)
+  affine('dec0', hDecodeDim, {param: modelParam})
 ]);
 
 var zPrior = TensorGaussian({mu: 0, sigma: 1, dims: [zDim, 1]});
