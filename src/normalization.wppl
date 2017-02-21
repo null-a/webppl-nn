@@ -37,7 +37,8 @@ var affineWithLayerNorm = function(nout, name, maybeModelParam) {
   ]);
 };
 
-// TODO: Implement in a similar way to layer norm.
+// TODO: Remove the bias term from weight norm. Create
+// `affineWeightNorm` with composition.
 
 // Linear layer with weight normalization.
 // https://arxiv.org/abs/1602.07868
