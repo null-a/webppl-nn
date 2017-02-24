@@ -215,12 +215,20 @@ var stack = function(arr) {
 // of addressing this I think.
 
 
-// Nets created with "linear" use a weight initialization based on
-// "Understanding the difficulty of training deep feedforward neural
-// networks", often called Xavier initialization.
+// Nets created with "linear" default to using a weight initialization
+// based on "Understanding the difficulty of training deep feedforward
+// neural networks", often called Xavier initialization.
 
 // TODO: This initialization scheme may not be suitable for asymmetric
 // non-linearities.
+
+var xavier = function(dims) {
+  assert.ok(dims.length === 2, 'Xavier initialization is only defined for matrices.');
+  var nin = dims[0];
+  var nout = dims[1];
+  var sigma = Math.sqrt(2 / (nin + nout));
+  return TensorGaussian({mu: 0, sigma, dims}).sample();
+};
 
 var linear = function(name, maybeArgs) {
   checkNetName(name);
@@ -228,10 +236,10 @@ var linear = function(name, maybeArgs) {
   var nout = args.out;
   assert.ok(Number.isInteger(nout), 'Argument "out" should be an integer.');
   var nnparam = args.param || param;
+  var init = args.init || xavier;
   return function(x) {
     var nin = dims(x)[0];
-    var sigma = Math.sqrt(2 / (nin + nout));
-    var w = nnparam({name, dims: [nout, nin], sigma});
+    var w = nnparam({name, dims: [nout, nin], init});
     return T.dot(w, x);
   };
 };

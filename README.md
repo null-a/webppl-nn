@@ -113,7 +113,7 @@ be aware of.
 
 ### Networks
 
-#### `linear(name, {out[, param]})`
+#### `linear(name, {out[, param, init]})`
 #### `affine(name, {out[, param, initb]})`
 
 These return a parameterized function of a single argument. This
