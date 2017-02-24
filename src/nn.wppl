@@ -35,6 +35,10 @@ var checkNetName = function(name) {
   return webpplNn.checkNetName(name);
 };
 
+var mergeObj = function(o1, o2) {
+  return _.assign({}, o1, o2);
+};
+
 // ==================================================
 // Model Parameters
 // ==================================================
@@ -218,10 +222,11 @@ var stack = function(arr) {
 // TODO: This initialization scheme may not be suitable for asymmetric
 // non-linearities.
 
-var linear = function(name, nout, maybeArgs) {
+var linear = function(name, maybeArgs) {
   checkNetName(name);
-  assert.ok(Number.isInteger(nout), 'nout should be an integer.');
   var args = maybeArgs || {};
+  var nout = args.out;
+  assert.ok(Number.isInteger(nout), 'Argument "out" should be an integer.');
   var nnparam = args.param || param;
   return function(x) {
     var nin = dims(x)[0];
@@ -247,9 +252,9 @@ var bias = function(name, maybeArgs) {
   };
 };
 
-var affine = function(name, nout, maybeArgs) {
+var affine = function(name, maybeArgs) {
   checkNetName(name);
   return compose(
     bias(name + 'b', maybeArgs),
-    linear(name + 'w', nout, maybeArgs));
+    linear(name + 'w', maybeArgs));
 };

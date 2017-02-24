@@ -63,7 +63,7 @@ of these functions. These helpers typically take a name and an output
 dimension as arguments.
 
 ```js
-var net = affine('net', 5);
+var net = affine('net', {out: 5});
 var out = net(ones([3, 1])); // dims(out) == [5, 1]
 ```
 
@@ -73,9 +73,9 @@ helper makes the common pattern of stacking "layers" more readable.
 ```js
 var mlp = stack([
   sigmoid,
-  affine('layer2', 1),
+  affine('layer2', {out: 1}),
   tanh,
-  affine('layer1', 5)
+  affine('layer1', {out: 5})
 ]);
 ```
 
@@ -87,8 +87,8 @@ the model parameter helpers described above can be passed to the
 network constructor.
 
 ```js
-var guideNet = linear('net1', 10);
-var modelNet = linear('net1', 10, {param: modelParamL2(1)});
+var guideNet = linear('net1', {out: 10});
+var modelNet = linear('net1', {out: 10, param: modelParamL2(1)});
 ```
 
 ## Examples
@@ -113,8 +113,8 @@ be aware of.
 
 ### Networks
 
-#### `linear(name, nout[, {param}])`
-#### `affine(name, nout[, {param, initb}])`
+#### `linear(name, {out[, param]})`
+#### `affine(name, {out[, param, initb]})`
 
 These return a parameterized function of a single argument. This
 function maps a vector to a vector of length `nout`.
@@ -124,9 +124,9 @@ function maps a vector to a vector of length `nout`.
 Returns a parameterized function of a single argument. This function
 maps vectors of length `n` to vectors of length `n`.
 
-#### `rnn(name, nout[, {param, ctor, output}])`
-#### `gru(name, nout[, {param, ctor}])`
-#### `lstm(name, nout[, {param}])`
+#### `rnn(name, {dim[, param, ctor, output]})`
+#### `gru(name, {dim[, param, ctor]})`
+#### `lstm(name, {dim[, param]})`
 
 These return parameterized function of two arguments. This function
 maps a state vector and an input vector to a new state vector.

@@ -28,12 +28,12 @@ var layerNorm = function(name, maybeArgs) {
 // takes a dummy nout param.) This could be useful for passing novel
 // constructors to gru/lstm etc.
 
-var affineWithLayerNorm = function(name, nout, maybeArgs) {
+var affineWithLayerNorm = function(name, maybeArgs) {
   checkNetName(name);
   return stack([
     bias(name + 'b', maybeArgs),
     layerNorm(name + 'ln', maybeArgs),
-    linear(name + 'w', nout, maybeArgs)
+    linear(name + 'w', maybeArgs)
   ]);
 };
 
@@ -59,10 +59,11 @@ var affineWithLayerNorm = function(name, nout, maybeArgs) {
 // Note: When I tried parameterizing g in log space the ml-classifier
 // example often failed to work well. I don't know why.
 
-var linearWeightNorm = function(name, nout, maybeArgs) {
+var linearWeightNorm = function(name, maybeArgs) {
   checkNetName(name);
-  assert.ok(Number.isInteger(nout), 'nout should be an integer');
   var args = maybeArgs || {};
+  var nout = args.out;
+  assert.ok(Number.isInteger(nout), 'Argument "out" should be an integer.');
   var nnparam = args.param || param;
   return function(x) {
     var nin = dims(x)[0];

@@ -1,7 +1,7 @@
 var classifierNet = stack([
   function(x) { T.get(x, 0); }, // Extract scalar output from vector.
   sigmoid, // Squish to [0,1], representing class probability of input.
-  linear('net1', 1, {param: modelParamL2(1)}), // L2 prior on parameters.
+  linear('net1', {out: 1, param: modelParamL2(1)}), // L2 prior on parameters.
   function(x) { Vector([x]); } // Map input from scalar to vector.
 ]);
 
