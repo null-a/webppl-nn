@@ -106,9 +106,12 @@ function oneHot(index, length) {
 }
 
 var namesSeen = {};
-function checkNetName(name) {
+function checkNetName(name, skipSeenCheck) {
   if (!name) {
     throw new Error('A network must be given a name.');
+  }
+  if (skipSeenCheck) {
+    return;
   }
   if (namesSeen.hasOwnProperty(name)) {
     var msg = 'Warning: The name "' + name + '" is used by multiple networks.';

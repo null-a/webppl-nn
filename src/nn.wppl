@@ -31,8 +31,8 @@ var usingGuide = function(fn) {
   };
 };
 
-var checkNetName = function(name) {
-  return webpplNn.checkNetName(name);
+var checkNetName = function(name, skipSeenCheck) {
+  return webpplNn.checkNetName(name, skipSeenCheck);
 };
 
 var mergeObj = function(o1, o2) {

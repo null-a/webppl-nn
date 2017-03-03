@@ -1,7 +1,7 @@
 // Traditional RNN
 
 var rnn = function(name, maybeArgs) {
-  checkNetName(name);
+  checkNetName(name, true);
   var args = maybeArgs || {};
   var dim = args.dim;
   assert.ok(Number.isInteger(dim), 'Argument "dim" should be an integer.');
