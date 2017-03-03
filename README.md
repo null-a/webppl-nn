@@ -95,20 +95,6 @@ var modelNet = linear('net1', {out: 10, param: modelParamL2(1)});
 
 * [Variational Auto-encoder](https://github.com/null-a/webppl-nn/blob/master/examples/vae.wppl)
 
-## Design Issues
-
-There are a few wrinkles in the current implementation that you should
-be aware of.
-
-* The input dimension of a network is determined when it is first
-  used. Passing an input of differing dimension on later uses will not
-  work, and is likely to generate an unhelpful error.
-
-* Parameter sharing can be induced by reusing network names. Care must
-  currently be taken to ensure that all nets with a given name, also
-  share the same dimension and (when specified) the same parameter
-  model. Failing to do this will probably lead to subtle bugs.
-
 ## Reference
 
 ### Networks
