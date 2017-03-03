@@ -193,6 +193,15 @@ Returns the `n` by `n` identity matrix.
 Returns a vector with length `length` in which all entries are zero
 except for the entry at `index` which is one.
 
+#### `concat(arr)`
+
+Returns the vector obtained by concatenating the elements of `arr`.
+(`arr` is assumed to be an array of vectors.)
+
+```js
+concat([ones([2, 1]), zeros([2, 1])]); // => Vector([1, 1, 0, 0])
+```
+
 ## License
 
 MIT
