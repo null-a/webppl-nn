@@ -19,11 +19,11 @@ var images = map(Vector, JSON.parse(fs.read('examples/data/mnist_images.json')))
 // Recognition network.
 // Maps from an input image to the parameters of the guide
 // distribution.
-var encH = compose(tanh, affine('encH', {out: hEncodeDim}));
-var encM = affine('encM', {out: zDim});
-var encS = affine('encS', {out: zDim});
-
 var encode = function(x) {
+  var encH = compose(tanh, affine('encH', {in: xDim, out: hEncodeDim}));
+  var encM = affine('encM', {in: hEncodeDim, out: zDim});
+  var encS = affine('encS', {in: hEncodeDim, out: zDim});
+
   var h = encH(x);
   var mu = encM(h);
   var sigma = T.exp(encS(h));
@@ -32,16 +32,19 @@ var encode = function(x) {
 
 // Generative network.
 // Maps from the latent space to pixels.
-var decode = stack([
-  sigmoid,
-  affine('dec1', {out: xDim, param: modelParam}),
-  tanh,
-  affine('dec0', {out: hDecodeDim, param: modelParam})
-]);
+var sampleDecoder = function() {
+  return stack([
+    sigmoid,
+    affine('dec1', {in: hDecodeDim, out: xDim, param: modelParam}),
+    tanh,
+    affine('dec0', {in: zDim, out: hDecodeDim, param: modelParam})
+  ]);
+};
 
 var zPrior = TensorGaussian({mu: 0, sigma: 1, dims: [zDim, 1]});
 
 var model = function() {
+  var decode = sampleDecoder();
   mapData({data: images, batchSize: 100}, function(image) {
     var z = sample(zPrior, {guide() {
       return DiagCovGaussian(encode(image));

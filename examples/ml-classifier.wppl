@@ -1,13 +1,17 @@
-var classifierNet = stack([
-  function(x) { T.get(x, 0); }, // Extract scalar output from vector.
-  sigmoid, // Squish to [0,1], representing class probability of input.
-  linear('net1', {out: 1, param: modelParamL2(1)}), // L2 prior on parameters.
-  function(x) { Vector([x]); } // Map input from scalar to vector.
-]);
+var sampleClassifierNet = function() {
+  return stack([
+    function(x) { T.get(x, 0); }, // Extract scalar output from vector.
+    sigmoid, // Squish to [0,1], representing class probability of input.
+    linear('net1', {in: 1, out: 1, param: modelParamL2(1)}), // L2 prior on parameters.
+    function(x) { Vector([x]); } // Map input from scalar to vector.
+  ]);
+};
 
 // Here we create a function that runs the net, using the (possibly
 // optimized) guide parameters.
-var optClassifierNet = usingGuide(classifierNet);
+var optClassifierNet = usingGuide(function(x) {
+  return sampleClassifierNet()(x);
+});
 
 var data = [
   {x: -2, label: false},
@@ -19,6 +23,7 @@ var data = [
   {x: 2.5, label: true}];
 
 var model = function() {
+  var classifierNet = sampleClassifierNet();
   mapData({data}, function(datum) {
     var p = classifierNet(datum.x);
     observe(Bernoulli({p}), datum.label);

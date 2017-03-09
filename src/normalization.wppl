@@ -8,10 +8,13 @@ var layerNorm = function(name, maybeArgs) {
   checkNetName(name);
   var args = maybeArgs || {};
   var nnparam = args.param || param;
+  var nout = args.out;
+  assert.ok(Number.isInteger(nout), 'Argument "out" should be an integer.');
+  // Gain parameters.
+  var g = nnparam({name: name + 'g', dims: [nout, 1], mu: 1, sigma: 0});
   return function(a) {
-    var nout = dims(a)[0];
-    // Gain parameters.
-    var g = nnparam({name: name + 'g', dims: [nout, 1], mu: 1, sigma: 0});
+    assert.ok(dims(a)[0] === nout,
+              'Input vector has unexpected dimension.');
     var mu = T.sumreduce(a) / nout;
     var acentered = T.sub(a, mu);
     var sd = Math.sqrt(T.sumreduce(T.pow(acentered, 2)) / nout);
@@ -62,15 +65,16 @@ var affineWithLayerNorm = function(name, maybeArgs) {
 var linearWeightNorm = function(name, maybeArgs) {
   checkNetName(name);
   var args = maybeArgs || {};
-  var nout = args.out;
-  assert.ok(Number.isInteger(nout), 'Argument "out" should be an integer.');
   var nnparam = args.param || param;
+  var nin = args.in;
+  var nout = args.out;
+  assert.ok(Number.isInteger(nin), 'Argument "in" should be an integer.');
+  assert.ok(Number.isInteger(nout), 'Argument "out" should be an integer.');
+  var sigma = Math.sqrt(2 / (nin + nout));
+  var g = nnparam({name: name + 'g', dims: [nout, 1], mu: 1, sigma: 0}); // gain
+  var v = nnparam({name: name + 'v', dims: [nout, nin], sigma});
+  var b = nnparam({name: name + 'b', dims: [nout, 1], sigma: 0});
   return function(x) {
-    var nin = dims(x)[0];
-    var sigma = Math.sqrt(2 / (nin + nout));
-    var g = nnparam({name: name + 'g', dims: [nout, 1], mu: 1, sigma: 0}); // gain
-    var v = nnparam({name: name + 'v', dims: [nout, nin], sigma});
-    var b = nnparam({name: name + 'b', dims: [nout, 1], sigma: 0});
     var norm = T.sqrt(webpplNn.sumreduce0(T.pow(v, 2)));
     return T.add(T.mul(T.div(g, norm), T.dot(v, x)), b);
   };

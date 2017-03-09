@@ -230,16 +230,41 @@ var xavier = function(dims) {
   return TensorGaussian({mu: 0, sigma, dims}).sample();
 };
 
+// I switched to creating parameters when a net is constructed rather
+// than when it is used, primarily for the following reason:
+
+// If the parameters are created when the net is used, then it is not
+// possible to use a net that uses model parameters from within
+// Enumerate nested within Optimize. (Because this would attempt to
+// sample the parameters from within Enumerate.) By creating the
+// parameters in the constructor, users have the flexibility required
+// to create a network within `Optimize` and then use the network
+// within nested `Enumerate`.
+
+// Further, making this change also allowed me to remove the cached
+// implementation of model parameters, which existed primarily to
+// support lazy parameter creation. This is probably a good thing,
+// since using this caching across coroutine boundaries seems iffy.
+// For example, even if it was correct, you can imagine been in a
+// situation where you call modelParamL2 within Optimize and later
+// within a nested Enumerate. This would have worked because of
+// caching. But if the call within Optimize is removed, the call
+// within the nested Enumerate will start to fail. (As it is now
+// attempts to sample from a continuous distribution within
+// Enumerate.) This kind of non-local effect is unpleaseant to deal
+// with and best avoided.
+
 var linear = function(name, maybeArgs) {
   checkNetName(name);
   var args = maybeArgs || {};
+  var nin = args.in;
   var nout = args.out;
+  assert.ok(Number.isInteger(nin), 'Argument "in" should be an integer.');
   assert.ok(Number.isInteger(nout), 'Argument "out" should be an integer.');
   var nnparam = args.param || param;
   var init = args.init || xavier;
+  var w = nnparam({name, dims: [nout, nin], init});
   return function(x) {
-    var nin = dims(x)[0];
-    var w = nnparam({name, dims: [nout, nin], init});
     return T.dot(w, x);
   };
 };
@@ -253,9 +278,12 @@ var bias = function(name, maybeArgs) {
   var nnparam = args.param || param;
   var initb = _.has(args, 'initb') ? args.initb : 0;
   assert.ok(_.isNumber(initb), 'Initial bias should be a number.');
+  var nout = args.out;
+  assert.ok(Number.isInteger(nout), 'Argument "out" should be an integer.');
+  var b = nnparam({name, dims: [nout, 1], mu: initb, sigma: 0});
   return function(x) {
-    var nout = dims(x)[0];
-    var b = nnparam({name, dims: [nout, 1], mu: initb, sigma: 0});
+    assert.ok(dims(x)[0] === nout,
+              'Input vector has unexpected dimension.');
     return T.add(x, b);
   };
 };

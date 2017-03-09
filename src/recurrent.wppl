@@ -3,15 +3,19 @@
 var rnn = function(name, maybeArgs) {
   checkNetName(name, true);
   var args = maybeArgs || {};
-  var dim = args.dim;
-  assert.ok(Number.isInteger(dim), 'Argument "dim" should be an integer.');
+  var hdim = args.hdim;
+  var xdim = args.xdim;
+  assert.ok(Number.isInteger(hdim), 'Argument "hdim" should be an integer.');
+  assert.ok(Number.isInteger(xdim), 'Argument "xdim" should be an integer.');
   var ctor = args.ctor || affine;
   var output = args.output || tanh;
-  var nargs = mergeObj(args, {out: dim});
+  var nargs = mergeObj(args, {in: hdim + xdim, out: hdim});
   var net = stack([output, ctor(name, nargs), concat]);
   return function(hprev, x) {
-    assert.ok(dims(hprev)[0] === dim,
+    assert.ok(dims(hprev)[0] === hdim,
               'Previous hidden vector has unexpected dimension');
+    assert.ok(dims(x)[0] === xdim,
+              'Input vector has unexpected dimension');
     return net([hprev, x]);
   };
 };
@@ -28,16 +32,20 @@ var rnn = function(name, maybeArgs) {
 var gru = function(name, maybeArgs) {
   checkNetName(name);
   var args = maybeArgs || {};
-  var dim = args.dim;
-  assert.ok(Number.isInteger(dim), 'Argument "dim" should be an integer.');
+  var hdim = args.hdim;
+  var xdim = args.xdim;
+  assert.ok(Number.isInteger(hdim), 'Argument "hdim" should be an integer.');
+  assert.ok(Number.isInteger(xdim), 'Argument "xdim" should be an integer.');
   var ctor = args.ctor || affine;
-  var nargs = mergeObj(args, {out: dim});
+  var nargs = mergeObj(args, {in: hdim + xdim, out: hdim});
   var update = compose(sigmoid, ctor(name + 'update', nargs));
   var reset = compose(sigmoid, ctor(name + 'reset', nargs));
   var candidate = compose(tanh, ctor(name + 'candidate', nargs));
   return function(hprev, x) {
-    assert.ok(dims(hprev)[0] === dim,
+    assert.ok(dims(hprev)[0] === hdim,
               'Previous hidden vector has unexpected dimension');
+    assert.ok(dims(x)[0] === xdim,
+              'Input vector has unexpected dimension');
     var hprevx = concat([hprev, x]);
     var r = reset(hprevx);
     var z = update(hprevx);
@@ -60,14 +68,17 @@ var gru = function(name, maybeArgs) {
 var lstm = function(name, maybeArgs) {
   checkNetName(name);
   var args = maybeArgs || {};
-  var dim = args.dim;
-  // dim is the total dimension of the state. i.e. memory + hidden
+  var hdim = args.hdim;
+  var xdim = args.xdim;
+  // hdim is the total dimension of the state. i.e. memory + hidden
   // state vectors. Setting things up this way makes it easy to swap
   // between gru and lstm.
-  assert.ok(Number.isInteger(dim) && (dim % 2 === 0),
-            'Argument "dim" should be an even integer.');
-  var hdim = dim / 2;
-  var nargs = mergeObj(args, {out: hdim});
+  assert.ok(Number.isInteger(hdim) && (hdim % 2 === 0),
+            'Argument "hdim" should be an even integer.');
+  assert.ok(Number.isInteger(xdim), 'Argument "xdim" should be an integer.');
+
+  var dim = hdim / 2; // Dimension of memory and hidden state.
+  var nargs = mergeObj(args, {in: dim + xdim, out: dim});
   // It's said that initializing the biases of the forget gate to a
   // value greater than 0 is a good idea. This is so that the output
   // is close to one at the start of optimization, ensuring
@@ -82,10 +93,12 @@ var lstm = function(name, maybeArgs) {
   return function(prev, x) {
     // For compatibility with the interface of e.g. gru we combine the
     // memory and hidden state into a single vector, prev.
-    assert.ok(dims(prev)[0] === dim,
+    assert.ok(dims(prev)[0] === hdim,
               'Previous state vector has unexpected dimension');
-    var cprev = T.reshape(T.range(prev, 0, hdim), [hdim, 1]);
-    var hprev = T.reshape(T.range(prev, hdim, dim), [hdim, 1]);
+    assert.ok(dims(x)[0] === xdim,
+              'Input vector has unexpected dimension');
+    var cprev = T.reshape(T.range(prev, 0, dim), [dim, 1]);
+    var hprev = T.reshape(T.range(prev, dim, hdim), [dim, 1]);
     var hprevx = concat([hprev, x]);
     var f = forget(hprevx);
     var i = input(hprevx);
