@@ -1,6 +1,0 @@
-display([
-  // The first two return the same value.
-  modelParamL2(.1)({name: 'x'}),
-  modelParamL2(.1)({name: 'x'}),
-  modelParamL2(.1)({name: 'y'})
-]);

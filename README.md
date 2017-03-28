@@ -25,34 +25,6 @@ This package currently requires the development version of WebPPL.
 
 ## Introduction
 
-### Model Parameters
-
-WebPPL "parameters" are primarily used to parameterize *guide*
-programs. In the model, the analog of a parameter is a prior guided by
-a delta distribution. This choice of guide gives a point estimate of
-the value of the random choice in the posterior when performing
-inference as optimization.
-
-WebPPL includes a helper `modelParam` which creates model parameters
-using an improper uniform distribution as the prior. Since it is not
-possible to sample from this improper distribution `modelParam` can
-only be used with optimization based algorithms.
-
-This package provides an additional helper `modelParamL2` which can be
-used to create model parameters that have a Gaussian prior. When
-performing inference as optimization this prior acts as a regularizer.
-Since `modelParamL2` creates a Gaussian random choice, it can be used
-with all sampling based inference algorithms.
-
-To allow the width of the prior to be specified, `modelParamL2` takes
-a single argument specifying the standard deviation of the Gaussian.
-This returns a function that takes an object in the same format as
-`param` and `modelParam`.
-
-```js
-var w = modelParamL2(1)({name: 'w', dims: [2, 2]});
-```
-
 ### Neural Nets
 
 In WebPPL we can represent "neural" networks as parameterized
@@ -90,6 +62,59 @@ network constructor.
 var guideNet = linear('net1', {out: 10});
 var modelNet = linear('net1', {out: 10, param: modelParamL2(1)});
 ```
+
+### Model Parameters
+
+WebPPL "parameters" are primarily used to parameterize *guide*
+programs. In the model, the analog of a parameter is a prior guided by
+a delta distribution. This choice of guide gives a point estimate of
+the value of the random choice in the posterior when performing
+inference as optimization.
+
+WebPPL includes a helper `modelParam` which creates model parameters
+using an improper uniform distribution as the prior. Since it is not
+possible to sample from this improper distribution `modelParam` can
+only be used with optimization based algorithms.
+
+This package provides an additional helper `modelParamL2` which can be
+used to create model parameters that have a Gaussian prior. When
+performing inference as optimization this prior acts as a regularizer.
+Since `modelParamL2` creates a Gaussian random choice, it can be used
+with all sampling based inference algorithms.
+
+To allow the width of the prior to be specified, `modelParamL2` takes
+a single argument specifying the standard deviation of the Gaussian.
+This returns a function that takes an object in the same format as
+`param` and `modelParam`.
+
+```js
+var w = modelParamL2(1)({name: 'w', dims: [2, 2]});
+```
+
+Note that in general, there is a subtle difference in the behavior of
+model parameters and parameters created with `param`.
+
+For example, with `param`, these two fragments of code are equivalent:
+
+```js
+// 1.
+var p = param({name: 'p'});
+f(p);
+g(p);
+
+// 2.
+f(param({name: 'p'}))
+g(param({name: 'p'}))
+```
+
+However, if `param({name: 'p'})` is replaced with
+`modelParamL2(1)({name: 'p'})` for example, then they are *not*
+equivalent. The reason is that each call to `modelParamL2()` adds a
+random choice to the model. In the common setting of optimizing the
+ELBO for example, each such random choice has the effect of extending
+the optimization objective with a weight decay term for its parameter.
+i.e. Additional calls to `modelParamL2()` (for a particular parameter)
+incur additional weight decay penalties.
 
 ## Examples
 
