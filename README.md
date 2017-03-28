@@ -28,14 +28,14 @@ This package currently requires the development version of WebPPL.
 ### Neural Nets
 
 In WebPPL we can represent "neural" networks as parameterized
-functions, typically from vectors to vectors. (By building on
-[adnn](https://github.com/dritchie/adnn).) This package provides a
+functions, typically from vectors to vectors. (By building
+on [adnn](https://github.com/dritchie/adnn).) This package provides a
 number of helper functions that capture common patterns in the shape
-of these functions. These helpers typically take a name and an output
-dimension as arguments.
+of these functions. These helpers typically take a name and
+input/output dimensions as arguments.
 
 ```js
-var net = affine('net', {out: 5});
+var net = affine('net', {in: 3, out: 5});
 var out = net(ones([3, 1])); // dims(out) == [5, 1]
 ```
 
@@ -45,23 +45,31 @@ helper makes the common pattern of stacking "layers" more readable.
 ```js
 var mlp = stack([
   sigmoid,
-  affine('layer2', {out: 1}),
+  affine('layer2', {in: 5, out: 1}),
   tanh,
-  affine('layer1', {out: 5})
+  affine('layer1', {in: 5, out: 5})
 ]);
 ```
 
-Such functions need to be parameterized by either guide or model
-parameters depending on where they are used. By default, the networks
-created with these helpers are parameterized directly by guide
-parameters. When the network is intended for use in the model, one of
-the model parameter helpers described above can be passed to the
-network constructor.
+By default, the parameters for such functions are created internally
+using the `param` method. An alternative method can be specified using
+the `param` argument. For example, the model parameter helpers can be
+used here:
 
 ```js
-var guideNet = linear('net1', {out: 10});
-var modelNet = linear('net1', {out: 10, param: modelParamL2(1)});
+var net1 = linear('net1', {in: 20, out: 10, param: modelParam});
+var net2 = linear('net2', {in: 20, out: 10, param: modelParamL2(1)});
 ```
+
+Note that parameters are created when a network constructor (`linear`,
+`affine`, etc.) is called. This is a change from earlier versions of
+webppl-nn, where parameter creation was delayed until the function
+representing the network was applied to an input.
+
+As a consequence, in typical usage, network constructors should now be
+called from *within* the model rather than from outside of `Optimize`.
+See the VAE [example](#examples) to see what this looks like in
+practice.
 
 ### Model Parameters
 
@@ -123,23 +131,24 @@ incur additional weight decay penalties.
 
 ### Networks
 
-#### `linear(name, {out[, param, init]})`
-#### `affine(name, {out[, param, initb]})`
+#### `linear(name, {in, out[, param, init]})`
+#### `affine(name, {in, out[, param, initb]})`
 
-These return a parameterized function of a single argument. This
-function maps a vector to a vector of length `nout`.
+These return a parameterized function of a single argument that maps a
+vector of length `in` to a vector of length `out`.
 
-#### `bias(name[, {param, initb}])`
+#### `bias(name, {out, [param, initb]})`
 
-Returns a parameterized function of a single argument. This function
-maps vectors of length `n` to vectors of length `n`.
+Returns a parameterized function of a single argument that maps
+vectors of length `out` to vectors of length `out`.
 
-#### `rnn(name, {dim[, param, ctor, output]})`
-#### `gru(name, {dim[, param, ctor]})`
-#### `lstm(name, {dim[, param]})`
+#### `rnn(name, {hdim, xdim, [, param, ctor, output]})`
+#### `gru(name, {hdim, xdim, [, param, ctor]})`
+#### `lstm(name, {hdim, xdim, [, param]})`
 
-These return parameterized function of two arguments. This function
-maps a state vector and an input vector to a new state vector.
+These return parameterized function of two arguments that maps a state
+vector of length `hdim` and an input vector of length `xdim` to a new
+state vector.
 
 ### Non-linearities
 
