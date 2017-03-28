@@ -91,10 +91,9 @@ This returns a function that takes an object in the same format as
 var w = modelParamL2(1)({name: 'w', dims: [2, 2]});
 ```
 
-Note that in general, there is a subtle difference in the behavior of
-model parameters and parameters created with `param`.
-
-For example, with `param`, these two fragments of code are equivalent:
+Note that in general, model parameters and parameters created with
+`param` are somewhat different in their behavior. For example, these
+two fragments of code are equivalent:
 
 ```js
 // 1.
