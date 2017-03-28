@@ -63,13 +63,13 @@ var linearWeightNorm = function(name, maybeArgs) {
   checkNetName(name);
   var args = maybeArgs || {};
   var nnparam = args.param || param;
+  var init = args.init || xavier;
   var nin = args.in;
   var nout = args.out;
   assert.ok(Number.isInteger(nin), 'Argument "in" should be an integer.');
   assert.ok(Number.isInteger(nout), 'Argument "out" should be an integer.');
-  var sigma = Math.sqrt(2 / (nin + nout));
   var g = nnparam({name: name + 'g', dims: [nout, 1], mu: 1, sigma: 0}); // gain
-  var v = nnparam({name: name + 'v', dims: [nout, nin], sigma});
+  var v = nnparam({name: name + 'v', dims: [nout, nin], init});
   return function(x) {
     var norm = T.sqrt(webpplNn.sumreduce0(T.pow(v, 2)));
     return T.mul(T.div(g, norm), T.dot(v, x));
