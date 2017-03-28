@@ -1,7 +1,7 @@
 // Traditional RNN
 
 var rnn = function(name, maybeArgs) {
-  checkNetName(name, true);
+  checkNetName(name);
   var args = maybeArgs || {};
   var hdim = args.hdim;
   var xdim = args.xdim;

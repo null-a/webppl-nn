@@ -105,19 +105,10 @@ function oneHot(index, length) {
   return out;
 }
 
-var namesSeen = {};
-function checkNetName(name, skipSeenCheck) {
+function checkNetName(name) {
   if (!name) {
     throw new Error('A network must be given a name.');
   }
-  if (skipSeenCheck) {
-    return;
-  }
-  if (namesSeen.hasOwnProperty(name)) {
-    var msg = 'Warning: The name "' + name + '" is used by multiple networks.';
-    util.warn(msg, true);
-  };
-  namesSeen[name] = true;
 };
 
 module.exports = {
