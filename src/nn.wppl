@@ -115,7 +115,7 @@ var xavier = function(dims) {
   var nin = dims[0];
   var nout = dims[1];
   var sigma = Math.sqrt(2 / (nin + nout));
-  return TensorGaussian({mu: 0, sigma, dims}).sample();
+  return tensorGaussian({mu: 0, sigma, dims});
 };
 
 // I switched to creating parameters when a net is constructed rather
