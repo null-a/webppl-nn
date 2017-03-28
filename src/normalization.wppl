@@ -40,9 +40,6 @@ var affineWithLayerNorm = function(name, maybeArgs) {
   ]);
 };
 
-// TODO: Remove the bias term from weight norm. Create
-// `affineWeightNorm` with composition.
-
 // Linear layer with weight normalization.
 // https://arxiv.org/abs/1602.07868
 
@@ -73,9 +70,14 @@ var linearWeightNorm = function(name, maybeArgs) {
   var sigma = Math.sqrt(2 / (nin + nout));
   var g = nnparam({name: name + 'g', dims: [nout, 1], mu: 1, sigma: 0}); // gain
   var v = nnparam({name: name + 'v', dims: [nout, nin], sigma});
-  var b = nnparam({name: name + 'b', dims: [nout, 1], sigma: 0});
   return function(x) {
     var norm = T.sqrt(webpplNn.sumreduce0(T.pow(v, 2)));
-    return T.add(T.mul(T.div(g, norm), T.dot(v, x)), b);
+    return T.mul(T.div(g, norm), T.dot(v, x));
   };
+};
+
+var affineWeightNorm = function(name, maybeArgs) {
+  checkNetName(name);
+  return compose(bias(name + 'b', maybeArgs),
+                 linearWeightNorm(name + 'wn', maybeArgs));
 };
