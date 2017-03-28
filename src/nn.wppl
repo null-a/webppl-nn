@@ -39,6 +39,9 @@ var parameterModel = function(getPrior) {
 // The function returned by e.g. modelParamL2(0.1) is analogous the
 // WebPPL's `modelParam`.
 
+// TODO: Consider calling this sampleParamL2 or similar, to hint at
+// the differences between model parameters and `param`?
+
 var modelParamL2 = function(sigma) {
   return parameterModel(function(paramOpts) {
     var dims = paramOpts.dims;
