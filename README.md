@@ -67,17 +67,17 @@ webppl-nn, where parameter creation was delayed until the function
 representing the network was applied to an input.
 
 As a consequence, in typical usage, network constructors should now be
-called from *within* the model rather than from outside of `Optimize`.
-See the VAE [example](#examples) to see what this looks like in
-practice.
+called from *within* `Optimize`, rather than from outside of
+`Optimize`. See the VAE [example](#examples) to see what this looks
+like in practice.
 
 ### Model Parameters
 
-WebPPL "parameters" are primarily used to parameterize *guide*
-programs. In the model, the analog of a parameter is a prior guided by
-a delta distribution. This choice of guide gives a point estimate of
-the value of the random choice in the posterior when performing
-inference as optimization.
+WebPPL parameters are primarily used to parameterize *guide* programs.
+In the model, the analog of a parameter is a prior guided by a delta
+distribution. This choice of guide gives a point estimate of the value
+of the random choice in the posterior when performing inference as
+optimization.
 
 WebPPL includes a helper `modelParam` which creates model parameters
 using an improper uniform distribution as the prior. Since it is not
