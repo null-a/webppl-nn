@@ -44,9 +44,8 @@ var parameterModel = function(getPrior) {
 
 var modelParamL2 = function(sigma) {
   return parameterModel(function(paramOpts) {
-    var dims = paramOpts.dims;
-    return dims ?
-        TensorGaussian({mu: 0, sigma, dims}) :
+    return (paramOpts && paramOpts.dims) ?
+        TensorGaussian({mu: 0, sigma, dims: paramOpts.dims}) :
         Gaussian({mu: 0, sigma});
   });
 };
