@@ -116,12 +116,13 @@ g(param({name: 'p'}))
 
 However, if `param({name: 'p'})` is replaced with
 `modelParamL2(1)({name: 'p'})` for example, then they are *not*
-equivalent. The reason is that each call to `modelParamL2()` adds a
-random choice to the model. In the common setting of optimizing the
-ELBO for example, each such random choice has the effect of extending
-the optimization objective with a weight decay term for its parameter.
-i.e. Additional calls to `modelParamL2()` (for a particular parameter)
-incur additional weight decay penalties.
+equivalent. The reason is that each call to the function returned by
+`modelParamL2(1)` (for example) adds a random choice to the model. In
+the common setting of optimizing the ELBO for example, each such
+random choice has the effect of extending the optimization objective
+with a weight decay term for its parameter. i.e. Additional calls to
+`modelParamL2(1)` (for a particular parameter) incur additional weight
+decay penalties.
 
 ## Examples
 
