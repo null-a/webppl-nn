@@ -133,15 +133,40 @@ decay penalties.
 ### Networks
 
 #### `linear(name, {in, out[, param, init]})`
-#### `affine(name, {in, out[, param, initb]})`
+#### `affine(name, {in, out[, param, init, initb]})`
 
 These return a parameterized function of a single argument that maps a
 vector of length `in` to a vector of length `out`.
 
-#### `bias(name, {out, [param, initb]})`
+The `init` argument can be used to specify the initialization of the
+weight matrix. It accepts a function that takes the shape of the
+matrix as its argument and returns a matrix of that shape. The default
+is `xavier`.
+
+Example usage:
+
+```js
+var idMatrixInit = function(dims) {
+  return idMatrix(dims[0]);
+};
+linear('l', {in: 10, out: 10, init: idMatrixInit});
+```
+
+See `bias` for details of the `initb` argument.
+
+#### `bias(name, {out[, param, initb]})`
 
 Returns a parameterized function of a single argument that maps
 vectors of length `out` to vectors of length `out`.
+
+The `initb` argument specifies the value with which each element of
+the bias vector is initialized. The default is `0`.
+
+Example usage:
+
+```js
+bias('b', {out: 10, init: -1});
+```
 
 #### `rnn(name, {hdim, xdim, [, param, ctor, output]})`
 #### `gru(name, {hdim, xdim, [, param, ctor]})`
@@ -218,6 +243,15 @@ Returns the vector obtained by concatenating the elements of `arr`.
 ```js
 concat([ones([2, 1]), zeros([2, 1])]); // => Vector([1, 1, 0, 0])
 ```
+
+#### `xavier(dims)`
+
+Implements a variant of the parameter initialization scheme described
+in
+[Understanding the difficulty of training deep feedforward neural networks](http://jmlr.csail.mit.edu/proceedings/papers/v9/glorot10a.html).
+
+This is the default initialization scheme for matrix valued network
+parameters.
 
 ## License
 
