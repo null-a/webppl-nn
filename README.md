@@ -172,9 +172,9 @@ bias('b', {out: 10, init: -1});
 #### `gru(name, {hdim, xdim, [, param, ctor]})`
 #### `lstm(name, {hdim, xdim, [, param]})`
 
-These return parameterized function of two arguments that maps a state
-vector of length `hdim` and an input vector of length `xdim` to a new
-state vector.
+These return a parameterized function of two arguments that maps a
+state vector of length `hdim` and an input vector of length `xdim` to
+a new state vector.
 
 ### Non-linearities
 
