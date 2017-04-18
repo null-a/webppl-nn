@@ -165,7 +165,7 @@ the bias vector is initialized. The default is `0`.
 Example usage:
 
 ```js
-bias('b', {out: 10, init: -1});
+bias('b', {out: 10, initb: -1});
 ```
 
 #### `rnn(name, {hdim, xdim, [, param, ctor, output]})`
